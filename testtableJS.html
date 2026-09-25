@@ -1,0 +1,1013 @@
+D:\Rust\dynamicChart\testtableJS.html
+<hr>
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deriv Contract Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0A0C10;
+      --panel: #12151B;
+      --panel-raised: #171B23;
+      --border: #222732;
+      --border-soft: #1A1E27;
+      --text: #E8EAED;
+      --text-dim: #8A93A3;
+      --text-faint: #565E6C;
+      --accent: #4FD1C5;
+      --accent-dim: #2C7A72;
+      --pos: #3DDC84;
+      --pos-bg: rgba(61, 220, 132, 0.10);
+      --neg: #FF5D5D;
+      --neg-bg: rgba(255, 93, 93, 0.10);
+      --warn: #F5A623;
+      --radius: 8px;
+      --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      background-image:
+        linear-gradient(var(--border-soft) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+      background-size: 32px 32px;
+      background-position: -1px -1px;
+      color: var(--text);
+      font-family: var(--sans);
+      padding: 28px;
+      min-height: 100%;
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    /* ---------- header ---------- */
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .title-block .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .title-block p {
+      margin: 4px 0 0;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 0 rgba(79, 209, 197, 0.6);
+      animation: pulse 2s infinite;
+    }
+
+    .pulse-dot.off {
+      background: var(--text-faint);
+      animation: none;
+      box-shadow: none;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(79, 209, 197, 0.55);
+      }
+
+      70% {
+        box-shadow: 0 0 0 8px rgba(79, 209, 197, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(79, 209, 197, 0);
+      }
+    }
+
+    /* ---------- connection panel ---------- */
+    .connect-panel {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .connect-panel input {
+      background: var(--panel-raised);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 7px 9px;
+      border-radius: 6px;
+      width: 128px;
+      outline: none;
+    }
+
+    .connect-panel input:focus {
+      border-color: var(--accent);
+    }
+
+    .connect-panel input::placeholder {
+      color: var(--text-faint);
+    }
+
+    .btn {
+      font-family: var(--mono);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 7px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--panel-raised);
+      color: var(--text);
+      white-space: nowrap;
+      transition: border-color .15s ease, color .15s ease, background .15s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #04201D;
+      font-weight: 600;
+    }
+
+    .btn.primary:hover {
+      opacity: .9;
+      color: #04201D;
+    }
+
+    .btn.ghost {
+      background: transparent;
+    }
+
+    .status-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+
+    /* ---------- table ---------- */
+    .table-shell {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      font-weight: 500;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-raised);
+    }
+
+    thead th.num {
+      text-align: right;
+    }
+
+    tbody tr.parent-row {
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-soft);
+      transition: background .12s ease;
+    }
+
+    tbody tr.parent-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    tbody tr.parent-row.expanded {
+      background: rgba(79, 209, 197, 0.045);
+    }
+
+    tbody td {
+      padding: 12px 14px;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    td.num {
+      text-align: right;
+      font-family: var(--mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .chev {
+      display: inline-flex;
+      width: 16px;
+      height: 16px;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-faint);
+      transition: transform .18s ease, color .18s ease;
+    }
+
+    tr.expanded .chev {
+      transform: rotate(90deg);
+      color: var(--accent);
+    }
+
+    .cid {
+      font-family: var(--mono);
+      color: var(--text);
+    }
+
+    .cid .sub {
+      color: var(--text-faint);
+      font-size: 11px;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .type-pill {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      background: var(--panel-raised);
+      letter-spacing: .03em;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .status-open {
+      color: #B9C2CE;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .status-open::before {
+      background: var(--text-dim);
+    }
+
+    .status-won {
+      color: var(--pos);
+      background: var(--pos-bg);
+    }
+
+    .status-won::before {
+      background: var(--pos);
+    }
+
+    .status-lost {
+      color: var(--neg);
+      background: var(--neg-bg);
+    }
+
+    .status-lost::before {
+      background: var(--neg);
+    }
+
+    .status-sold {
+      color: var(--warn);
+      background: rgba(245, 166, 35, 0.10);
+    }
+
+    .status-sold::before {
+      background: var(--warn);
+    }
+
+    .profit {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .profit.pos {
+      color: var(--pos);
+    }
+
+    .profit.neg {
+      color: var(--neg);
+    }
+
+    .profit .pct {
+      font-weight: 400;
+      color: var(--text-faint);
+      margin-left: 5px;
+      font-size: 11px;
+    }
+
+    @keyframes flashPos {
+      0% {
+        background: rgba(61, 220, 132, 0.35);
+      }
+
+      100% {
+        background: transparent;
+      }
+    }
+
+    @keyframes flashNeg {
+      0% {
+        background: rgba(255, 93, 93, 0.35);
+      }
+
+      100% {
+        background: transparent;
+      }
+    }
+
+    td.flash-pos {
+      animation: flashPos 900ms ease-out;
+    }
+
+    td.flash-neg {
+      animation: flashNeg 900ms ease-out;
+    }
+
+    .tick-time {
+      color: var(--text-faint);
+      font-family: var(--mono);
+      font-size: 11.5px;
+    }
+
+    /* ---------- expand panel ---------- */
+    tr.detail-row td {
+      padding: 0;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .detail-inner {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .22s ease;
+      background: var(--panel-raised);
+    }
+
+    tr.expanded+tr.detail-row .detail-inner {
+      max-height: 640px;
+    }
+
+    .detail-content {
+      padding: 18px 22px 20px 46px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px 22px;
+      margin-bottom: 16px;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    .field .k {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 4px;
+    }
+
+    .field .v {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+      overflow-wrap: anywhere;
+    }
+
+    .field .v.pos {
+      color: var(--pos);
+    }
+
+    .field .v.neg {
+      color: var(--neg);
+    }
+
+    .field .v.dim {
+      color: var(--text-dim);
+    }
+
+    .longcode {
+      font-family: var(--sans);
+      font-size: 12.5px;
+      color: var(--text-dim);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .raw-toggle {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      cursor: pointer;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+
+    .raw-json {
+      display: none;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: #9FB3C8;
+      max-height: 260px;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    .raw-json.show {
+      display: block;
+    }
+
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-faint);
+      font-family: var(--mono);
+      font-size: 12.5px;
+    }
+
+    footer {
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-faint);
+      font-family: var(--mono);
+      font-size: 11px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="title-block">
+        <div class="eyebrow"><span class="pulse-dot" id="pulseDot"></span> proposal_open_contract · live stream</div>
+        <h1>Contract Tracker</h1>
+        <p>Parent = contract_id · คลิกแถวเพื่อดูรายละเอียดการ track ทั้งหมด</p>
+      </div>
+
+      <div class="connect-panel">
+        <span class="status-tag" id="connStatus"><span class="pulse-dot off" id="connDot"></span> disconnected</span>
+        <input id="appIdInput" type="text" placeholder="app_id" value="33oMfwq7Au6O1aNyHppR9">
+        <input id="accountIdInput" type="text" placeholder="account_id (CR...)" value="DOT92631882" style="width:140px">
+        <input id="tokenInput" type="password" placeholder="api token"
+          value="pat_fd054e60d69a61c5e9133b7887a40e8166494d0d3dce0ac713cb0ea6c0311b45" style="width:150px">
+        <button class="btn primary" id="connectBtn">Connect to Deriv</button>
+        <input id="trackContractInput" type="text" placeholder="Contract ID" style="width:120px">
+        <button class="btn ghost" id="trackBtn">Track ID</button>
+        <button class="btn ghost" id="refreshPortfolioBtn">Sync Orders</button>
+      </div>
+    </header>
+
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:34px"></th>
+            <th>Contract</th>
+            <th>Symbol / Type</th>
+            <th class="num">Stake</th>
+            <th class="num">Profit</th>
+            <th>Status</th>
+            <th class="num">Last tick</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <!-- rows injected by JS -->
+        </tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none">ไม่มีสัญญาที่กำลัง track อยู่</div>
+    </div>
+
+    <footer>
+      <span id="footerLeft">Disconnected · Connect to Deriv to stream open contracts</span>
+      <span id="footerRight">0 contracts</span>
+    </footer>
+
+    <script src="derivClass/derivClass_V2.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        /* ============ state ============ */
+        const state = {
+          contracts: new Map(),   // contract_id -> contract object
+          expanded: new Set(),
+          ws: null,
+          live: false
+        };
+
+        const els = {
+          tbody: document.getElementById('tbody'),
+          emptyState: document.getElementById('emptyState'),
+          footerRight: document.getElementById('footerRight'),
+          footerLeft: document.getElementById('footerLeft'),
+          pulseDot: document.getElementById('pulseDot'),
+          connStatus: document.getElementById('connStatus'),
+          connDot: document.getElementById('connDot'),
+          connectBtn: document.getElementById('connectBtn'),
+          appIdInput: document.getElementById('appIdInput'),
+          accountIdInput: document.getElementById('accountIdInput'),
+          tokenInput: document.getElementById('tokenInput'),
+          trackContractInput: document.getElementById('trackContractInput'),
+          trackBtn: document.getElementById('trackBtn'),
+          refreshPortfolioBtn: document.getElementById('refreshPortfolioBtn'),
+        };
+
+        /* ============ helpers ============ */
+        function fmt(n, d) { if (n === undefined || n === null || isNaN(n)) return '—'; return Number(n).toFixed(d === undefined ? 2 : d); }
+        function fmtTime(epoch) {
+          if (!epoch) return '—';
+          const d = new Date(epoch * 1000);
+          return d.toLocaleTimeString('th-TH', { hour12: false });
+        }
+        function statusClass(s) {
+          return { open: 'status-open', won: 'status-won', lost: 'status-lost', sold: 'status-sold' }[s] || 'status-open';
+        }
+
+        const flashMap = new Map();
+        function flagFlash(id, prev, next) {
+          if (next === prev) return;
+          flashMap.set(id, next > prev ? 'pos' : 'neg');
+        }
+
+        /* ============ rendering ============ */
+        function render(preserveScroll) {
+          const ids = Array.from(state.contracts.keys()).sort((a, b) => b - a);
+          els.footerRight.textContent = ids.length + ' contract' + (ids.length === 1 ? '' : 's');
+          els.emptyState.style.display = ids.length ? 'none' : 'block';
+
+          const scrollY = window.scrollY;
+          els.tbody.innerHTML = ids.map(id => rowHtml(state.contracts.get(id))).join('');
+          if (preserveScroll) window.scrollTo(0, scrollY);
+
+          // apply flash animations post-render
+          flashMap.forEach((kind, id) => {
+            const cell = els.tbody.querySelector(`[data-profit-cell="${id}"]`);
+            if (cell) {
+              cell.classList.remove('flash-pos', 'flash-neg');
+              void cell.offsetWidth; // restart animation
+              cell.classList.add(kind === 'pos' ? 'flash-pos' : 'flash-neg');
+            }
+          });
+          flashMap.clear();
+
+          bindRowEvents();
+        }
+
+        function rowHtml(c) {
+          const isExp = state.expanded.has(c.contract_id);
+          const profitClass = c.profit >= 0 ? 'pos' : 'neg';
+          return `
+      <tr class="parent-row ${isExp ? 'expanded' : ''}" data-id="${c.contract_id}">
+        <td><span class="chev">▶</span></td>
+        <td class="cid">${c.contract_id}<span class="sub">since ${fmtTime(c.date_start)}</span></td>
+        <td><span class="type-pill">${c.contract_type || '—'}</span> &nbsp;<span style="color:var(--text-dim)">${c.display_name || c.underlying || '—'}</span></td>
+        <td class="num">${fmt(c.buy_price, 2)} ${c.currency}</td>
+        <td class="num" data-profit-cell="${c.contract_id}">
+          <span class="profit ${profitClass}">${c.profit >= 0 ? '+' : ''}${fmt(c.profit, 2)}<span class="pct">(${c.profit_percentage >= 0 ? '+' : ''}${fmt(c.profit_percentage, 1)}%)</span></span>
+        </td>
+        <td><span class="status-badge ${statusClass(c.status)}">${c.status}</span></td>
+        <td class="num tick-time">${fmtTime(c.current_spot_time)}</td>
+      </tr>
+      <tr class="detail-row"><td colspan="7"><div class="detail-inner">${isExp ? detailHtml(c) : ''}</div></td></tr>
+    `;
+        }
+
+        function detailHtml(c) {
+          const isMultiplier = c.contract_type === 'MULTUP' || c.contract_type === 'ACCU';
+          const fields = [
+            ['Entry spot', fmt(c.entry_spot, c.pip)],
+            ['Entry tick time', fmtTime(c.entry_tick_time)],
+            ['Current spot', fmt(c.current_spot, c.pip)],
+            ['Current spot time', fmtTime(c.current_spot_time)],
+            ['Buy price', fmt(c.buy_price, 2) + ' ' + c.currency],
+            ['Bid price (sell value)', fmt(c.bid_price, 2) + ' ' + c.currency],
+            ['Payout', isMultiplier ? '—' : fmt(c.payout, 2) + ' ' + c.currency],
+            ['Profit', { val: (c.profit >= 0 ? '+' : '') + fmt(c.profit, 2), cls: c.profit >= 0 ? 'pos' : 'neg' }],
+            ['Profit %', { val: (c.profit_percentage >= 0 ? '+' : '') + fmt(c.profit_percentage, 1) + '%', cls: c.profit_percentage >= 0 ? 'pos' : 'neg' }],
+            ['Multiplier', c.multiplier ? 'x' + c.multiplier : '—'],
+            ['Barrier', c.barrier || '—'],
+            ['Tick count', c.tick_count || '—'],
+            ['Date start', fmtTime(c.date_start)],
+            ['Date expiry', c.date_expiry ? fmtTime(c.date_expiry) : '—'],
+            ['Is expired', c.is_expired ? 'true' : 'false'],
+            ['Is valid to sell', c.is_valid_to_sell ? 'true' : 'false'],
+          ];
+          const fieldsHtml = fields.map(([k, v]) => {
+            const val = typeof v === 'object' ? v.val : v;
+            const cls = typeof v === 'object' ? v.cls : '';
+            return `<div class="field"><div class="k">${k}</div><div class="v ${cls}">${val}</div></div>`;
+          }).join('');
+
+          const raw = JSON.stringify(c, null, 2);
+
+          const ticks = c.ticks || [];
+          const tickRowsHtml = ticks.map(t => {
+            const pCls = t.profit >= 0 ? 'pos' : 'neg';
+            return `<tr>
+              <td>#${t.tick_num}</td>
+              <td>${fmtTime(t.time)}</td>
+              <td class="num">${fmt(t.spot, c.pip)}</td>
+              <td class="num">${fmt(t.bid_price, 2)}</td>
+              <td class="num"><span class="profit ${pCls}">${t.profit >= 0 ? '+' : ''}${fmt(t.profit, 2)} (${t.profit_pct >= 0 ? '+' : ''}${fmt(t.profit_pct, 1)}%)</span></td>
+            </tr>`;
+          }).reverse().join('');
+
+          const tickTableHtml = ticks.length ? `
+            <div style="margin-top:14px; margin-bottom:14px;">
+              <div style="font-family:var(--mono); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;">
+                📈 Tick-by-Tick Profit History Log (${ticks.length} Ticks Recorded)
+              </div>
+              <div style="max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:6px;">
+                <table style="width:100%; font-size:12px; font-family:var(--mono);">
+                  <thead>
+                    <tr style="background:var(--panel); color:var(--text-faint); font-size:10px;">
+                      <th style="padding:6px 8px;">Tick</th>
+                      <th style="padding:6px 8px;">Time</th>
+                      <th style="padding:6px 8px;" class="num">Spot Price</th>
+                      <th style="padding:6px 8px;" class="num">Bid Value</th>
+                      <th style="padding:6px 8px;" class="num">Profit / Loss</th>
+                    </tr>
+                  </thead>
+                  <tbody>${tickRowsHtml}</tbody>
+                </table>
+              </div>
+            </div>
+          ` : '';
+
+          return `
+      <div class="detail-content">
+        <div class="detail-grid">${fieldsHtml}</div>
+        ${tickTableHtml}
+        <div class="longcode">${c.longcode}</div>
+        <div class="raw-toggle" data-raw-toggle="${c.contract_id}">▸ raw proposal_open_contract JSON</div>
+        <pre class="raw-json" id="raw-${c.contract_id}">${escapeHtml(raw)}</pre>
+      </div>
+    `;
+        }
+
+        function escapeHtml(s) {
+          return s.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+        }
+
+        function bindRowEvents() {
+          els.tbody.querySelectorAll('.parent-row').forEach(row => {
+            row.addEventListener('click', () => {
+              const id = Number(row.getAttribute('data-id'));
+              if (state.expanded.has(id)) state.expanded.delete(id);
+              else state.expanded.add(id);
+              render();
+            });
+          });
+          els.tbody.querySelectorAll('[data-raw-toggle]').forEach(el => {
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const id = el.getAttribute('data-raw-toggle');
+              const pre = document.getElementById('raw-' + id);
+              pre.classList.toggle('show');
+              el.textContent = (pre.classList.contains('show') ? '▾' : '▸') + ' raw proposal_open_contract JSON';
+            });
+          });
+          els.tbody.querySelectorAll('.detail-content').forEach(d => {
+            d.addEventListener('click', e => e.stopPropagation());
+          });
+        }
+
+        /* ============ live Deriv WebSocket connection via DerivAppVerNewAuth ============ */
+        let portfolioTimer = null;
+
+        const derivApp = new DerivAppVerNewAuth({
+          appId: els.appIdInput,
+          accountId: els.accountIdInput,
+          token: els.tokenInput,
+          lookupAppId: els.appIdInput,
+          lookupToken: els.tokenInput,
+          connectBtn: els.connectBtn,
+          statusDot: els.connDot
+        });
+
+        derivApp.onOpen = function () {
+          const accId = els.accountIdInput ? els.accountIdInput.value.trim() : '';
+          setConnStatus('live · OTP authorized (' + accId + ')', true);
+          state.live = true;
+          state.contracts.clear();
+          state.expanded.clear();
+          render();
+
+          // ดึงสัญญาทั้งหมดที่เปิดเทรดค้างอยู่
+          derivApp.fetchPortfolio();
+          startPortfolioPolling();
+        };
+
+        derivApp.onClose = function () {
+          setConnStatus('disconnected', false);
+          state.live = false;
+          stopPortfolioPolling();
+        };
+
+        derivApp.onError = function (err) {
+          const msg = typeof err === 'string' ? err : (err && err.message ? err.message : (Array.isArray(err) && err[0] ? err[0].message : 'Connection error'));
+          setConnStatus('error: ' + msg, false);
+        };
+
+        derivApp.onOpenContract = function (poc) {
+          if (poc && poc.contract_id) {
+            const prev = state.contracts.get(poc.contract_id) || {};
+            const norm = normalizeLive(poc);
+
+            // เก็บสะสมประวัติ Tick (Profit, Current Spot, Time) ทุกครั้งที่มี Tick ใหม่ส่งเข้ามา
+            const ticks = prev.ticks || [];
+            if (norm.current_spot !== undefined && norm.current_spot !== null) {
+              const lastTick = ticks[ticks.length - 1];
+              if (!lastTick || lastTick.spot !== norm.current_spot || lastTick.time !== norm.current_spot_time) {
+                ticks.push({
+                  tick_num: ticks.length + 1,
+                  spot: norm.current_spot,
+                  time: norm.current_spot_time,
+                  profit: norm.profit,
+                  profit_pct: norm.profit_percentage,
+                  bid_price: norm.bid_price
+                });
+              }
+            }
+
+            state.contracts.set(poc.contract_id, { ...prev, ...norm, ticks });
+            render(true);
+          }
+        };
+
+        derivApp.onPortfolio = function (portfolio) {
+          if (portfolio && Array.isArray(portfolio.contracts)) {
+            portfolio.contracts.forEach(c => {
+              if (c && c.contract_id) {
+                if (!state.contracts.has(c.contract_id)) {
+                  state.contracts.set(c.contract_id, {
+                    contract_id: c.contract_id,
+                    contract_type: c.contract_type || '—',
+                    underlying: c.symbol || c.underlying || '—',
+                    display_name: c.symbol || c.underlying || '—',
+                    buy_price: c.buy_price || 0,
+                    currency: c.currency || 'USD',
+                    profit: c.profit || 0,
+                    profit_percentage: 0,
+                    status: 'open',
+                    current_spot_time: c.date_start
+                  });
+                }
+                derivApp.trackOrder(c.contract_id);
+              }
+            });
+            render(true);
+          }
+        };
+
+        derivApp.onMessage = function (data) {
+          if (data.msg_type === 'authorize') {
+            const loginid = (data.authorize && data.authorize.loginid) ? data.authorize.loginid : '';
+            if (els.accountIdInput && loginid) els.accountIdInput.value = loginid;
+            setConnStatus('live · authorized (' + loginid + ')', true);
+            state.live = true;
+            render();
+
+            derivApp.fetchPortfolio();
+            startPortfolioPolling();
+          }
+          if (data.msg_type === 'portfolio' && data.portfolio && Array.isArray(data.portfolio.contracts)) {
+            data.portfolio.contracts.forEach(c => {
+              if (c && c.contract_id) {
+                derivApp.trackOrder(c.contract_id);
+              }
+            });
+          }
+        };
+
+        function startPortfolioPolling() {
+          stopPortfolioPolling();
+          portfolioTimer = setInterval(() => {
+            if (derivApp.ws && derivApp.ws.readyState === WebSocket.OPEN) {
+              derivApp.fetchPortfolio();
+            }
+          }, 5000);
+        }
+
+        function stopPortfolioPolling() {
+          if (portfolioTimer) {
+            clearInterval(portfolioTimer);
+            portfolioTimer = null;
+          }
+        }
+
+        derivApp.setConnectedUI = function (connected) {
+          if (els.appIdInput) els.appIdInput.disabled = false;
+          if (els.accountIdInput) els.accountIdInput.disabled = false;
+          if (els.tokenInput) els.tokenInput.disabled = false;
+        };
+
+        async function connectLive() {
+          const appId = els.appIdInput.value.trim();
+          let accountId = els.accountIdInput ? els.accountIdInput.value.trim() : '';
+          const token = els.tokenInput.value.trim();
+
+          if (!appId) { alert('กรุณาใส่ Trading App ID ก่อน'); return; }
+          if (!token) { alert('กรุณาใส่ PAT Token ก่อน'); return; }
+
+          setConnStatus('connecting (OTP)…', false);
+
+          // 1. หากยังไม่ได้กรอก Account ID ให้ลองค้นหาบัญชีให้อัตโนมัติด้วย listAccounts()
+          if (!accountId) {
+            try {
+              derivApp.els.lookupAppId = { value: appId };
+              derivApp.els.lookupToken = { value: token };
+              await derivApp.listAccounts();
+              accountId = els.accountIdInput ? els.accountIdInput.value.trim() : '';
+            } catch (e) {
+              console.warn('Auto account lookup failed:', e);
+            }
+          }
+
+          if (!accountId) {
+            alert('ไม่พบ Account ID กรุณาระบุ Account ID (เช่น DOT92631882 หรือ CR...)');
+            setConnStatus('disconnected', false);
+            return;
+          }
+
+          // 2. เรียก OTP Flow ของ derivClass_V2.js (กระบวนการเดียวกับ testauth.html / testauth.php)
+          await derivApp.connectPrivateOTP(appId, accountId, token);
+        }
+
+        function normalizeLive(c) {
+          // map raw API fields into the same shape used by the renderer
+          return {
+            contract_id: c.contract_id,
+            contract_type: c.contract_type || '—',
+            underlying: c.underlying || c.symbol || '—',
+            display_name: c.display_name || c.underlying_symbol || c.underlying || c.symbol || '—',
+            pip: (c.current_spot && String(c.current_spot).split('.')[1] || '').length || 2,
+            currency: c.currency || 'USD',
+            buy_price: c.buy_price,
+            payout: c.payout,
+            multiplier: c.multiplier || null,
+            entry_spot: c.entry_spot,
+            entry_tick_time: c.entry_tick_time,
+            current_spot: c.current_spot,
+            current_spot_time: c.current_spot_time,
+            date_start: c.date_start,
+            date_expiry: c.date_expiry,
+            barrier: c.barrier || null,
+            tick_count: c.tick_count || null,
+            bid_price: c.bid_price,
+            profit: c.profit,
+            profit_percentage: c.profit_percentage,
+            status: c.status,
+            is_expired: c.is_expired,
+            is_valid_to_sell: c.is_valid_to_sell,
+            is_settleable: c.is_settleable,
+            validation_error: c.validation_error || '',
+            longcode: c.longcode || '',
+            shortcode: c.shortcode || '',
+          };
+        }
+
+        function disconnectLive() {
+          derivApp.disconnect();
+          state.live = false;
+          state.contracts.clear();
+          state.expanded.clear();
+          setConnStatus('disconnected', false);
+          render();
+        }
+
+        function setConnStatus(text, isLive) {
+          els.connStatus.innerHTML = `<span class="pulse-dot ${isLive ? '' : 'off'}" id="connDot"></span> ${text}`;
+          els.footerLeft.textContent = isLive
+            ? 'live stream from Deriv WebSocket · proposal_open_contract, subscribe:1'
+            : 'Disconnected · Connect to Deriv to stream open contracts';
+          if (isLive) {
+            els.connectBtn.textContent = 'Disconnect';
+            els.connectBtn.onclick = disconnectLive;
+          } else {
+            els.connectBtn.textContent = 'Connect to Deriv';
+            els.connectBtn.onclick = connectLive;
+          }
+        }
+
+        /* ============ wire up ============ */
+        els.connectBtn.addEventListener('click', connectLive);
+
+        if (els.trackBtn) {
+          els.trackBtn.addEventListener('click', () => {
+            const id = els.trackContractInput ? els.trackContractInput.value.trim() : '';
+            if (!id) { alert('กรอก Contract ID ที่ต้องการติดตามก่อน'); return; }
+            derivApp.trackOrder(id);
+          });
+        }
+
+        if (els.refreshPortfolioBtn) {
+          els.refreshPortfolioBtn.addEventListener('click', () => {
+            derivApp.fetchPortfolio();
+          });
+        }
+
+        render();
+      })();
+    </script>
+</body>
+
+</html>

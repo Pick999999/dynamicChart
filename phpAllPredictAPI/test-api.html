@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Integration</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+            font-size: 12px;
+        }
+        
+        .success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .link-btn {
+            padding: 15px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: block;
+        }
+        
+        .link-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .link-btn.green {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 API Integration Test</h1>
+        
+        <div class="test-section">
+            <h3>Test 1: ส่งข้อมูล Sample Candles</h3>
+            <p>ทดสอบส่งข้อมูล candle 30 แท่งไปวิเคราะห์</p>
+            <button onclick="testSampleData()">🚀 Run Test</button>
+            <div id="result1" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test 2: โหลดจาก RawData/rawData2.json</h3>
+            <p>โหลดข้อมูลจากไฟล์ที่มีอยู่แล้ว</p>
+            <button onclick="testFromFile()">📂 Load & Analyze</button>
+            <div id="result2" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="links">
+            <a href="deriv-full-analysis.html" class="link-btn" target="_blank">
+                📈 Open Deriv Analysis
+            </a>
+            <a href="display.php" class="link-btn green" target="_blank">
+                📊 View Full Report
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        async function testSampleData() {
+            const resultEl = document.getElementById('result1');
+            resultEl.style.display = 'block';
+            resultEl.className = 'result';
+            resultEl.innerHTML = '<div class="loading">⏳ กำลังวิเคราะห์...</div>';
+            
+            // สร้างข้อมูล sample
+            const now = Math.floor(Date.now() / 1000);
+            const candles = [];
+            let price = 100;
+            
+            for (let i = 0; i < 50; i++) {
+                const change = (Math.random() - 0.5) * 2;
+                const open = price;
+                const close = price + change;
+                const high = Math.max(open, close) + Math.random();
+                const low = Math.min(open, close) - Math.random();
+                
+                candles.push({
+                    time: now + (i * 60),
+                    open: parseFloat(open.toFixed(3)),
+                    high: parseFloat(high.toFixed(3)),
+                    low: parseFloat(low.toFixed(3)),
+                    close: parseFloat(close.toFixed(3))
+                });
+                
+                price = close;
+            }
+            
+            try {
+                const response = await fetch('api-receive-candle.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        candles: candles,
+                        assetCode: 'R_10'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultEl.className = 'result success';
+                    resultEl.innerHTML = '<h4>✅ Success!</h4><pre>' + 
+                        JSON.stringify(result, null, 2) + '</pre>';
+                } else {
+                    resultEl.className = 'result error';
+                    resultEl.innerHTML = '<h4>❌ Error!</h4><pre>' + 
+                        JSON.stringify(result, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                resultEl.className = 'result error';
+                resultEl.innerHTML = '<h4>❌ Error!</h4><p>' + error.message + '</p>';
+            }
+        }
+        
+        async function testFromFile() {
+            const resultEl = document.getElementById('result2');
+            resultEl.style.display = 'block';
+            resultEl.className = 'result';
+            resultEl.innerHTML = '<div class="loading">⏳ กำลังโหลดและวิเคราะห์...</div>';
+            
+            try {
+                // โหลดข้อมูลจากไฟล์
+                const fileResponse = await fetch('RawData/rawData2.json');
+                const rawData = await fileResponse.json();
+                
+                // แปลง epoch เป็น time
+                const candles = rawData.map(item => ({
+                    time: item.epoch || item.time,
+                    open: item.open,
+                    high: item.high,
+                    low: item.low,
+                    close: item.close
+                }));
+                
+                console.log('Loaded candles:', candles.length);
+                
+                // ส่งไปวิเคราะห์
+                const response = await fetch('api-receive-candle.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        candles: candles,
+                        assetCode: 'R_10'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultEl.className = 'result success';
+                    resultEl.innerHTML = '<h4>✅ Success!</h4>' +
+                        '<p><strong>Total Candles:</strong> ' + result.stats.totalCandles + '</p>' +
+                        '<p><strong>Total Trades:</strong> ' + result.stats.totalTrades + '</p>' +
+                        '<p><strong>Asset:</strong> ' + result.stats.assetCode + '</p>' +
+                        '<pre>' + JSON.stringify(result.data.labStJson.slice(0, 3), null, 2) + 
+                        '\n... และอีก ' + (result.data.labStJson.length - 3) + ' trades</pre>';
+                } else {
+                    resultEl.className = 'result error';
+                    resultEl.innerHTML = '<h4>❌ Error!</h4><pre>' + 
+                        JSON.stringify(result, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                resultEl.className = 'result error';
+                resultEl.innerHTML = '<h4>❌ Error!</h4><p>' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

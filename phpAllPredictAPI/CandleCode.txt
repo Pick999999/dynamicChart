@@ -1,0 +1,214 @@
+[
+    {
+        "StatusCode": 1,
+        "StatusDesc": "L-FF-R-N"
+    },
+    {
+        "StatusCode": 2,
+        "StatusDesc": "M-UF-R-N"
+    },
+    {
+        "StatusCode": 3,
+        "StatusDesc": "M-DF-R-N"
+    },
+    {
+        "StatusCode": 4,
+        "StatusDesc": "M-UF-G-N"
+    },
+    {
+        "StatusCode": 5,
+        "StatusDesc": "M-UU-G-N"
+    },
+    {
+        "StatusCode": 6,
+        "StatusDesc": "M-DU-R-N"
+    },
+    {
+        "StatusCode": 7,
+        "StatusDesc": "L-DD-R-D"
+    },
+    {
+        "StatusCode": 8,
+        "StatusDesc": "L-DD-R-N"
+    },
+    {
+        "StatusCode": 9,
+        "StatusDesc": "L-UD-G-C"
+    },
+    {
+        "StatusCode": 10,
+        "StatusDesc": "M-UU-G-C"
+    },
+    {
+        "StatusCode": 11,
+        "StatusDesc": "M-UU-R-C"
+    },
+    {
+        "StatusCode": 12,
+        "StatusDesc": "L-DD-R-C"
+    },
+    {
+        "StatusCode": 13,
+        "StatusDesc": "L-DD-G-N"
+    },
+    {
+        "StatusCode": 14,
+        "StatusDesc": "M-UU-E-N"
+    },
+    {
+        "StatusCode": 15,
+        "StatusDesc": "M-DU-R-C"
+    },
+    {
+        "StatusCode": 16,
+        "StatusDesc": "L-DU-R-C"
+    },
+    {
+        "StatusCode": 17,
+        "StatusDesc": "L-DD-G-C"
+    },
+    {
+        "StatusCode": 18,
+        "StatusDesc": "L-DD-G-D"
+    },
+    {
+        "StatusCode": 19,
+        "StatusDesc": "M-UD-G-C"
+    },
+    {
+        "StatusCode": 20,
+        "StatusDesc": "L-DF-R-C"
+    },
+    {
+        "StatusCode": 21,
+        "StatusDesc": "L-FD-R-C"
+    },
+    {
+        "StatusCode": 22,
+        "StatusDesc": "M-FD-G-C"
+    },
+    {
+        "StatusCode": 23,
+        "StatusDesc": "M-UD-G-D"
+    },
+    {
+        "StatusCode": 24,
+        "StatusDesc": "M-UU-G-D"
+    },
+    {
+        "StatusCode": 25,
+        "StatusDesc": "M-UU-R-D"
+    },
+    {
+        "StatusCode": 26,
+        "StatusDesc": "M-DU-R-D"
+    },
+    {
+        "StatusCode": 27,
+        "StatusDesc": "L-DU-R-D"
+    },
+    {
+        "StatusCode": 28,
+        "StatusDesc": "L-UU-G-C"
+    },
+    {
+        "StatusCode": 29,
+        "StatusDesc": "L-DU-G-D"
+    },
+    {
+        "StatusCode": 30,
+        "StatusDesc": "L-FD-G-C"
+    },
+    {
+        "StatusCode": 31,
+        "StatusDesc": "M-DD-R-D"
+    },
+    {
+        "StatusCode": 32,
+        "StatusDesc": "M-UD-G-N"
+    },
+    {
+        "StatusCode": 33,
+        "StatusDesc": "M-DU-G-N"
+    },
+    {
+        "StatusCode": 34,
+        "StatusDesc": "M-UU-R-N"
+    },
+    {
+        "StatusCode": 35,
+        "StatusDesc": "L-UD-R-C"
+    },
+    {
+        "StatusCode": 36,
+        "StatusDesc": "M-UD-R-C"
+    },
+    {
+        "StatusCode": 37,
+        "StatusDesc": "M-DU-G-C"
+    },
+    {
+        "StatusCode": 38,
+        "StatusDesc": "L-UU-G-N"
+    },
+    {
+        "StatusCode": 39,
+        "StatusDesc": "M-UD-R-N"
+    },
+    {
+        "StatusCode": 40,
+        "StatusDesc": "M-DF-G-N"
+    },
+    {
+        "StatusCode": 41,
+        "StatusDesc": "M-DD-G-C"
+    },
+    {
+        "StatusCode": 42,
+        "StatusDesc": "M-DD-R-C"
+    },
+    {
+        "StatusCode": 43,
+        "StatusDesc": "L-DU-G-C"
+    },
+    {
+        "StatusCode": 44,
+        "StatusDesc": "L-UU-R-N"
+    },
+    {
+        "StatusCode": 45,
+        "StatusDesc": "M-FU-G-D"
+    },
+    {
+        "StatusCode": 46,
+        "StatusDesc": "L-FU-R-N"
+    },
+    {
+        "StatusCode": 47,
+        "StatusDesc": "L-FD-R-N"
+    },
+    {
+        "StatusCode": 48,
+        "StatusDesc": "L-DF-G-C"
+    },
+    {
+        "StatusCode": 49,
+        "StatusDesc": "M-FU-R-C"
+    },
+    {
+        "StatusCode": 50,
+        "StatusDesc": "L-DU-G-N"
+    },
+    {
+        "StatusCode": 51,
+        "StatusDesc": "L-DF-R-D"
+    },
+    {
+        "StatusCode": 52,
+        "StatusDesc": "L-DU-R-N"
+    },
+    {
+        "StatusCode": 53,
+        "StatusDesc": "M-UD-E-C"
+    }
+]

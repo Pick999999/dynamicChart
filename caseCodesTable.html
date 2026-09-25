@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pkTrend / detectTrend V5 — 27 Case Codes Reference Table</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0b0f17;
+    --card-bg: rgba(18, 24, 38, 0.75);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --row-hover: rgba(79, 209, 197, 0.05);
+    --text-main: #f0f4f8;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    
+    --primary: #38bdf8;
+    --accent: #2dd4bf;
+    --accent-glow: rgba(45, 212, 191, 0.25);
+    --up-green: #22c55e;
+    --up-green-bg: rgba(34, 197, 94, 0.12);
+    --up-green-border: rgba(34, 197, 94, 0.35);
+    
+    --dn-red: #ef4444;
+    --dn-red-bg: rgba(239, 68, 68, 0.12);
+    --dn-red-border: rgba(239, 68, 68, 0.35);
+
+    --warn-yellow: #f59e0b;
+    --warn-yellow-bg: rgba(245, 158, 11, 0.12);
+    --warn-yellow-border: rgba(245, 158, 11, 0.35);
+
+    --purple: #a855f7;
+    --purple-bg: rgba(168, 85, 247, 0.12);
+    --purple-border: rgba(168, 85, 247, 0.35);
+
+    --gray-bg: rgba(148, 163, 184, 0.1);
+    --gray-border: rgba(148, 163, 184, 0.25);
+
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-sans: 'Inter', 'Prompt', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--bg);
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(45, 212, 191, 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    padding: 30px 20px 80px;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Header Section */
+  .header-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(16px);
+    border-radius: 18px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  .top-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .badge-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--primary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+  }
+
+  .source-link {
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .source-link span { color: var(--accent); font-weight: 600; }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  p.subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Stats Bar */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .stat-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+
+  .stat-box .num {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-main);
+  }
+  .stat-box .lbl {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* Controls Section */
+  .controls-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(16px);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 260px;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    background: rgba(11, 15, 23, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    padding: 10px 16px 10px 38px;
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .search-wrap input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 15px;
+  }
+
+  .tab-pills, .filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .pill-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 4px;
+  }
+
+  .filter-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+  }
+
+  .filter-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .filter-btn.active {
+    background: var(--primary);
+    color: #0b0f17;
+    border-color: var(--primary);
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(56, 189, 248, 0.35);
+  }
+
+  /* Table Styles */
+  .table-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(16px);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    width: 100%;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13.5px;
+  }
+
+  thead {
+    background: rgba(11, 15, 23, 0.85);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  th {
+    padding: 14px 18px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover {
+    background: var(--row-hover);
+  }
+
+  td {
+    padding: 14px 18px;
+    vertical-align: middle;
+  }
+
+  /* Specific Badges */
+  .code-no-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 800;
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+  }
+
+  .code-no-badge.extended {
+    background: rgba(168, 85, 247, 0.1);
+    color: #c084fc;
+    border-color: rgba(168, 85, 247, 0.3);
+  }
+
+  .case-code-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 5px 10px;
+    border-radius: 7px;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .case-code-pill:hover {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+  }
+
+  .case-desc-text {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  .tag-group {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .group-Up { background: var(--up-green-bg); color: var(--up-green); border: 1px solid var(--up-green-border); }
+  .group-Down { background: var(--dn-red-bg); color: var(--dn-red); border: 1px solid var(--dn-red-border); }
+  .group-Spike { background: var(--warn-yellow-bg); color: var(--warn-yellow); border: 1px solid var(--warn-yellow-border); }
+  .group-Engulfing { background: var(--purple-bg); color: #c084fc; border: 1px solid var(--purple-border); }
+  .group-Rejected { background: rgba(244, 63, 94, 0.12); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.35); }
+  .group-Sideways { background: var(--gray-bg); color: var(--text-muted); border: 1px solid var(--gray-border); }
+  .group-System { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3); }
+
+  .trend-text {
+    font-weight: 600;
+    font-size: 12.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .trend-UpTrend { color: var(--up-green); }
+  .trend-DownTrend { color: var(--dn-red); }
+  .trend-Rejected { color: #fb7185; }
+  .trend-Sideways { color: #94a3b8; }
+  .trend-null { color: var(--text-dim); }
+
+  .desc-cell {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.55;
+    max-width: 440px;
+  }
+
+  .type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .type-core { background: rgba(56, 189, 248, 0.12); color: var(--primary); border: 1px solid rgba(56, 189, 248, 0.3); }
+  .type-ext { background: rgba(168, 85, 247, 0.12); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #0f172a;
+    color: #38bdf8;
+    border: 1px solid #38bdf8;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.25s;
+    pointer-events: none;
+    z-index: 1000;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header-card">
+    <div class="top-meta">
+      <span class="badge-tag">📊 detectTrend_V5 Reference</span>
+      <span class="badge-tag" id="dbStatusBadge" style="background:rgba(34,197,94,0.12); border-color:rgba(34,197,94,0.35); color:#22c55e;">🗄️ SQLite: case_codes (27 records)</span>
+      <div class="source-link">Source: <span>detectTrend_V5.js</span> / <span>database.db</span></div>
+    </div>
+    <h1>pkTrend & detectTrend V5 — 27 Case Codes Table</h1>
+    <p class="subtitle">
+      ตารางรหัสและคำอธิบายรูปแบบแท่งเทียนทั้งหมด 27 รูปแบบ (20 รูปแบบหลักตามสถิติ + 7 รูปแบบขยายพิเศษ) พร้อมหมายเลข <code>codeNo</code> เพื่อการจดจำและใช้งานอย่างมีประสิทธิภาพ
+    </p>
+
+    <!-- Stats Bar -->
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="num" id="statTotal">27</div>
+        <div class="lbl">Total Case Codes</div>
+      </div>
+      <div class="stat-box">
+        <div class="num" style="color:var(--primary);">20</div>
+        <div class="lbl">Core Cases (1–20)</div>
+      </div>
+      <div class="stat-box">
+        <div class="num" style="color:#c084fc;">7</div>
+        <div class="lbl">Extended Cases (21–27)</div>
+      </div>
+      <div class="stat-box">
+        <div class="num" style="color:var(--accent);" id="statShowing">27</div>
+        <div class="lbl">Showing Rows</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-card">
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="ค้นหาด้วย CodeNo, Case Code, หรือคำอธิบาย...">
+      </div>
+    </div>
+
+    <!-- Category Tabs -->
+    <div class="tab-pills">
+      <span class="pill-label">Category:</span>
+      <button class="filter-btn active" data-type="ALL">ทั้งหมด (27)</button>
+      <button class="filter-btn" data-type="CORE">20 รูปแบบหลัก (Core: 1–20)</button>
+      <button class="filter-btn" data-type="EXTENDED">7 รูปแบบขยาย (Extended: 21–27)</button>
+    </div>
+
+    <!-- Group Filter -->
+    <div class="filter-pills" id="groupFilterContainer">
+      <span class="pill-label">Group:</span>
+      <button class="filter-btn active" data-group="ALL">ALL</button>
+      <button class="filter-btn" data-group="Up">Up (1)</button>
+      <button class="filter-btn" data-group="Down">Down (1)</button>
+      <button class="filter-btn" data-group="Spike">Spike (8)</button>
+      <button class="filter-btn" data-group="Engulfing">Engulfing (3)</button>
+      <button class="filter-btn" data-group="Rejected">Rejected (6)</button>
+      <button class="filter-btn" data-group="Sideways">Sideways (7)</button>
+      <button class="filter-btn" data-group="System">System (1)</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table id="codesTable">
+        <thead>
+          <tr>
+            <th style="width:70px; text-align:center;">CodeNo</th>
+            <th style="width:230px;">Case Code & Identifier</th>
+            <th style="width:120px;">Category</th>
+            <th style="width:130px;">Group</th>
+            <th style="width:140px;">Trend</th>
+            <th>Description / คำอธิบายความหมาย</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Populated by JavaScript -->
+        </tbody>
+      </table>
+      <div id="emptyState" class="empty-state" style="display:none;">
+        ❌ ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast">📋 Copied to clipboard!</div>
+
+<script>
+const CASE_DATA = [
+  // Core 20 Cases (1-20)
+  {
+    codeNo: 1,
+    caseCode: "UP-CONFIRM",
+    caseDesc: "CONFIRMED_UP",
+    group: "Up",
+    trend: "UpTrend",
+    type: "CORE",
+    description: "ทำ Higher High ปิดสูงกว่าหรือเท่าแท่งก่อนหน้า และปิดในโซนบนของแท่งตัวเอง ยืนยันแรงซื้อยังควบคุมตลาด"
+  },
+  {
+    codeNo: 2,
+    caseCode: "DN-CONFIRM",
+    caseDesc: "CONFIRMED_DOWN",
+    group: "Down",
+    trend: "DownTrend",
+    type: "CORE",
+    description: "ทำ Lower Low ปิดต่ำกว่าหรือเท่าแท่งก่อนหน้า และปิดในโซนล่างของแท่งตัวเอง ยืนยันแรงขายยังควบคุมตลาด"
+  },
+  {
+    codeNo: 3,
+    caseCode: "SPK-CONTINUE-UP",
+    caseDesc: "SPIKE_CONTINUATION_UP",
+    group: "Spike",
+    trend: "UpTrend",
+    type: "CORE",
+    description: "แท่งนี้เป็น Spike ที่พุ่งขึ้นแรงและปิดยืนในโซนบนของแท่ง ไม่โดนกดกลับ มีโอกาสเป็นแรงส่งจริง (Breakout Momentum) ไม่ใช่แค่หลอก"
+  },
+  {
+    codeNo: 4,
+    caseCode: "SPK-CONTINUE-DN",
+    caseDesc: "SPIKE_CONTINUATION_DOWN",
+    group: "Spike",
+    trend: "DownTrend",
+    type: "CORE",
+    description: "แท่งนี้เป็น Spike ที่ทิ่มลงแรงและปิดยืนในโซนล่างของแท่ง ไม่โดนดันกลับ มีโอกาสเป็นแรงส่งจริง (Breakout Momentum) ฝั่งขาย"
+  },
+  {
+    codeNo: 5,
+    caseCode: "SPK-BULLTRAP",
+    caseDesc: "SPIKE_BULL_TRAP",
+    group: "Spike",
+    trend: "Rejected",
+    type: "CORE",
+    description: "แท่งนี้เป็น Spike ที่พุ่งขึ้นแรงทำ Higher High แต่ถูกกดลงมาปิดใกล้จุดต่ำสุดของแท่ง คล้ายการล่าสภาพคล่องฝั่งซื้อ (Bull Trap) เสี่ยงกลับตัวลงสูง"
+  },
+  {
+    codeNo: 6,
+    caseCode: "SPK-BEARTRAP",
+    caseDesc: "SPIKE_BEAR_TRAP",
+    group: "Spike",
+    trend: "Rejected",
+    type: "CORE",
+    description: "แท่งนี้เป็น Spike ที่ทิ่มลงแรงทำ Lower Low แต่ถูกดันกลับขึ้นมาปิดใกล้จุดสูงสุดของแท่ง คล้ายการล่าสภาพคล่องฝั่งขาย (Bear Trap) เสี่ยงกลับตัวขึ้นสูง"
+  },
+  {
+    codeNo: 7,
+    caseCode: "SPK-NODIRECTION",
+    caseDesc: "SPIKE_NO_CLEAR_DIRECTION",
+    group: "Spike",
+    trend: "Sideways",
+    type: "CORE",
+    description: "แท่งนี้เป็น Spike (range กว้างเกิน ATR) แต่ไม่ได้ทำ Higher High / Lower Low ชัดเจน ตลาดผันผวนสูงไร้ทิศทาง"
+  },
+  {
+    codeNo: 8,
+    caseCode: "SPK-HESITANT-UP",
+    caseDesc: "SPIKE_HESITANT_UP",
+    group: "Spike",
+    trend: "Sideways",
+    type: "CORE",
+    description: "แท่งนี้เป็น Spike ฝั่ง Higher High แต่ปิดในโซนกลางของแท่ง มีแรงซื้อแต่ยังไม่ยืนยันชัดเจน ตลาดเริ่มลังเล"
+  },
+  {
+    codeNo: 9,
+    caseCode: "EG-BULLISH",
+    caseDesc: "BULLISH_ENGULFING",
+    group: "Engulfing",
+    trend: "UpTrend",
+    type: "CORE",
+    description: "Outside Bar ที่กลืนกรอบแท่งก่อนหน้า (high สูงกว่า + low ต่ำกว่า) และปิดในโซนบน สัญญาณกลับตัวขึ้นหรือแรงซื้อเข้ามาชัดเจน"
+  },
+  {
+    codeNo: 10,
+    caseCode: "EG-BEARISH",
+    caseDesc: "BEARISH_ENGULFING",
+    group: "Engulfing",
+    trend: "DownTrend",
+    type: "CORE",
+    description: "Outside Bar ที่กลืนกรอบแท่งก่อนหน้า (high สูงกว่า + low ต่ำกว่า) และปิดในโซนล่าง สัญญาณกลับตัวลงหรือแรงขายเข้ามาชัดเจน"
+  },
+  {
+    codeNo: 11,
+    caseCode: "RJ-BULLTRAP-STRONG",
+    caseDesc: "STRONG_BULL_TRAP",
+    group: "Rejected",
+    trend: "Rejected",
+    type: "CORE",
+    description: "ทำ Higher High แต่ถูกแรงขายกดลงมาปิดใกล้จุดต่ำสุดของแท่ง และปิดต่ำกว่าแท่งก่อนหน้าด้วย สัญญาณกลับตัวลงที่ชัดเจน (Bull Trap)"
+  },
+  {
+    codeNo: 12,
+    caseCode: "RJ-BEARTRAP-STRONG",
+    caseDesc: "STRONG_BEAR_TRAP",
+    group: "Rejected",
+    trend: "Rejected",
+    type: "CORE",
+    description: "ทำ Lower Low แต่ถูกแรงซื้อดันขึ้นมาปิดใกล้จุดสูงสุดของแท่ง และปิดสูงกว่าแท่งก่อนหน้าด้วย สัญญาณกลับตัวขึ้นที่ชัดเจน (Bear Trap)"
+  },
+  {
+    codeNo: 13,
+    caseCode: "RJ-FOLLOWFAIL-UP",
+    caseDesc: "FAILED_FOLLOWTHROUGH_UP",
+    group: "Rejected",
+    trend: "Rejected",
+    type: "CORE",
+    description: "ทำ Higher High แต่ปิดต่ำกว่าแท่งก่อนหน้า แสดงว่าโมเมนตัมขาขึ้นเริ่มแผ่ว ควรจับตาแท่งถัดไป"
+  },
+  {
+    codeNo: 14,
+    caseCode: "RJ-FOLLOWFAIL-DN",
+    caseDesc: "FAILED_FOLLOWTHROUGH_DOWN",
+    group: "Rejected",
+    trend: "Rejected",
+    type: "CORE",
+    description: "ทำ Lower Low แต่ปิดสูงกว่าแท่งก่อนหน้า แสดงว่าโมเมนตัมขาลงเริ่มแผ่ว ควรจับตาแท่งถัดไป"
+  },
+  {
+    codeNo: 15,
+    caseCode: "RJ-UPWICK-WEAK",
+    caseDesc: "WEAK_UPPER_WICK",
+    group: "Rejected",
+    trend: "Rejected",
+    type: "CORE",
+    description: "ทำ Higher High และยังปิดสูงกว่าแท่งก่อนหน้า แต่มีไส้บนยาวแสดงว่าเจอแรงขายกดในช่วงท้ายแท่ง แรงซื้อเริ่มอ่อนกำลัง"
+  },
+  {
+    codeNo: 16,
+    caseCode: "RJ-LOWWICK-WEAK",
+    caseDesc: "WEAK_LOWER_WICK",
+    group: "Rejected",
+    trend: "Rejected",
+    type: "CORE",
+    description: "ทำ Lower Low และยังปิดต่ำกว่าแท่งก่อนหน้า แต่มีไส้ล่างยาวแสดงว่าเจอแรงซื้อดันกลับในช่วงท้ายแท่ง แรงขายเริ่มอ่อนกำลัง"
+  },
+  {
+    codeNo: 17,
+    caseCode: "SD-INSIDEBAR",
+    caseDesc: "INSIDE_BAR",
+    group: "Sideways",
+    trend: "Sideways",
+    type: "CORE",
+    description: "แท่งปัจจุบันมี high/low อยู่ภายในกรอบของแท่งก่อนหน้าทั้งหมด (Inside Bar) ตลาดกำลังหดตัว/พักตัว รอการ breakout"
+  },
+  {
+    codeNo: 18,
+    caseCode: "SD-MIXEDSIGNAL",
+    caseDesc: "MIXED_SIGNAL",
+    group: "Sideways",
+    trend: "Sideways",
+    type: "CORE",
+    description: "High สูงกว่าแท่งก่อนหน้าแค่ 1 ใน 2 แท่ง (สัญญาณขัดแย้งกันเอง) ประกอบกับ body เล็ก ตลาดสับสน ยังไม่มีทิศทางชัดเจน"
+  },
+  {
+    codeNo: 19,
+    caseCode: "SD-MIXEDSIGNAL-DN",
+    caseDesc: "MIXED_SIGNAL_DOWN",
+    group: "Sideways",
+    trend: "Sideways",
+    type: "CORE",
+    description: "Low ต่ำกว่าแท่งก่อนหน้าแค่ 1 ใน 2 แท่ง (สัญญาณขัดแย้งกันเอง) ประกอบกับ body เล็ก ตลาดสับสนฝั่งขาลง"
+  },
+  {
+    codeNo: 20,
+    caseCode: "SYS-NODATA",
+    caseDesc: "INSUFFICIENT_DATA",
+    group: "System",
+    trend: "null",
+    type: "CORE",
+    description: "ข้อมูลไม่พอสำหรับเปรียบเทียบ ต้องมีอย่างน้อย 3 แท่ง (ปัจจุบัน + ก่อนหน้า 2 แท่ง)"
+  },
+
+  // Extended 7 Cases (21-27)
+  {
+    codeNo: 21,
+    caseCode: "SD-DOJI",
+    caseDesc: "DOJI_INDECISION",
+    group: "Sideways",
+    trend: "Sideways",
+    type: "EXTENDED",
+    description: "Body ของแท่งเล็กมากเมื่อเทียบกับ range ทั้งหมด (เปิด-ปิดใกล้กัน) แรงซื้อแรงขายสูสีกัน ไม่มีฝ่ายใดชนะชัดเจน"
+  },
+  {
+    codeNo: 22,
+    caseCode: "SD-FLATRESISTANCE",
+    caseDesc: "FLAT_RESISTANCE_TEST",
+    group: "Sideways",
+    trend: "Sideways",
+    type: "EXTENDED",
+    description: "High ของแท่งใกล้เคียงกับ high ของแท่งก่อนหน้ามาก ชนแนวต้านเดิมซ้ำ (ทดสอบแนวต้าน) ยังไม่มีแรงมากพอจะทะลุ"
+  },
+  {
+    codeNo: 23,
+    caseCode: "SD-FLATSUPPORT",
+    caseDesc: "FLAT_SUPPORT_TEST",
+    group: "Sideways",
+    trend: "Sideways",
+    type: "EXTENDED",
+    description: "Low ของแท่งใกล้เคียงกับ low ของแท่งก่อนหน้ามาก ชนแนวรับเดิมซ้ำ (ทดสอบแนวรับ/Double Bottom) ยังไม่มีแรงพอจะหลุด"
+  },
+  {
+    codeNo: 24,
+    caseCode: "SD-NOSTRUCTURE",
+    caseDesc: "NO_CLEAR_STRUCTURE",
+    group: "Sideways",
+    trend: "Sideways",
+    type: "EXTENDED",
+    description: "ไม่ได้ทำ Higher High หรือ Lower Low ชัดเจนเมื่อเทียบกับ 2 แท่งก่อนหน้า ตลาดยังไม่มีโครงสร้างที่ชัดเจนพอจะสรุปทิศทาง"
+  },
+  {
+    codeNo: 25,
+    caseCode: "EG-INDECISION",
+    caseDesc: "ENGULFING_INDECISION",
+    group: "Engulfing",
+    trend: "Sideways",
+    type: "EXTENDED",
+    description: "Outside Bar ที่กลืนกรอบแท่งก่อนหน้า แต่ปิดใกล้กลางแท่ง แรงซื้อแรงขายสู้กันไม่มีฝ่ายใดชนะ ผันผวนสูงแต่ไร้ทิศทาง"
+  },
+  {
+    codeNo: 26,
+    caseCode: "SPK-HESITANT-DN",
+    caseDesc: "SPIKE_HESITANT_DOWN",
+    group: "Spike",
+    trend: "Sideways",
+    type: "EXTENDED",
+    description: "แท่งนี้เป็น Spike ฝั่ง Lower Low แต่ปิดในโซนกลางของแท่ง หรือปิดไม่ต่ำกว่าแท่งก่อนหน้า มีแรงขายแต่ยังไม่ยืนยันชัดเจน"
+  },
+  {
+    codeNo: 27,
+    caseCode: "SPK-WHIPSAW",
+    caseDesc: "SPIKE_WHIPSAW",
+    group: "Spike",
+    trend: "Sideways",
+    type: "EXTENDED",
+    description: "แท่งนี้เป็น Spike ที่ range กว้างผิดปกติ (Outside Bar) แต่ปิดใกล้กลางแท่ง ผันผวนรุนแรงสับขาหลอก อาจเป็นจุดกลับตัวหรือพักตัว"
+  }
+];
+
+let currentType = 'ALL';
+let currentGroup = 'ALL';
+let searchQuery = '';
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const emptyState = document.getElementById('emptyState');
+  const statShowing = document.getElementById('statShowing');
+
+  const filtered = CASE_DATA.filter(item => {
+    // Type Filter
+    if (currentType === 'CORE' && item.type !== 'CORE') return false;
+    if (currentType === 'EXTENDED' && item.type !== 'EXTENDED') return false;
+
+    // Group Filter
+    if (currentGroup !== 'ALL' && item.group !== currentGroup) return false;
+
+    // Search Filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const match = 
+        item.codeNo.toString().includes(q) ||
+        item.caseCode.toLowerCase().includes(q) ||
+        item.caseDesc.toLowerCase().includes(q) ||
+        item.group.toLowerCase().includes(q) ||
+        item.trend.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q);
+      if (!match) return false;
+    }
+
+    return true;
+  });
+
+  statShowing.textContent = filtered.length;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    emptyState.style.display = 'block';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+
+  tbody.innerHTML = filtered.map(item => {
+    const isExt = item.type === 'EXTENDED';
+    const trendClass = `trend-${item.trend}`;
+    const trendIcon = item.trend === 'UpTrend' ? '🟢' : item.trend === 'DownTrend' ? '🔴' : item.trend === 'Rejected' ? '⚡' : '⏸️';
+    const trendLabel = item.trend === 'null' ? '—' : item.trend;
+
+    return `
+      <tr>
+        <td style="text-align:center;">
+          <span class="code-no-badge ${isExt ? 'extended' : ''}">${item.codeNo}</span>
+        </td>
+        <td>
+          <div class="case-code-pill" onclick="copyToClipboard('${item.caseCode}')" title="คลิกเพื่อคัดลอก Case Code">
+            <span>🏷️</span> ${item.caseCode}
+          </div>
+          <div class="case-desc-text">${item.caseDesc}</div>
+        </td>
+        <td>
+          <span class="type-badge ${isExt ? 'type-ext' : 'type-core'}">${isExt ? 'Extended' : 'Core'}</span>
+        </td>
+        <td>
+          <span class="tag-group group-${item.group}">${item.group}</span>
+        </td>
+        <td>
+          <span class="trend-text ${trendClass}">${trendIcon} ${trendLabel}</span>
+        </td>
+        <td class="desc-cell">${item.description}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// Copy to clipboard
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(`คัดลอก ${text} เรียบร้อยแล้ว!`);
+  });
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = `📋 ${msg}`;
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2000);
+}
+
+// Event Listeners
+document.querySelectorAll('.tab-pills .filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-pills .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentType = btn.getAttribute('data-type');
+    renderTable();
+  });
+});
+
+document.querySelectorAll('#groupFilterContainer .filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#groupFilterContainer .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentGroup = btn.getAttribute('data-group');
+    renderTable();
+  });
+});
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  searchQuery = e.target.value.trim();
+  renderTable();
+});
+
+// Fetch dynamically from SQLite if PHP Server is running
+function fetchFromDb() {
+  fetch('php/get_case_codes.php')
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.success && Array.isArray(data.cases) && data.cases.length > 0) {
+        // Map database fields to CASE_DATA structure
+        CASE_DATA.length = 0;
+        data.cases.forEach(c => {
+          CASE_DATA.push({
+            codeNo: c.code_no,
+            caseCode: c.case_code,
+            caseDesc: c.case_desc,
+            group: c.group_name,
+            trend: c.trend,
+            type: c.category,
+            description: c.description
+          });
+        });
+        const badge = document.getElementById('dbStatusBadge');
+        if (badge) {
+          badge.textContent = `🗄️ SQLite: case_codes (${data.cases.length} records)`;
+          badge.style.background = 'rgba(34,197,94,0.15)';
+          badge.style.color = '#22c55e';
+        }
+        renderTable();
+      }
+    })
+    .catch(() => {
+      // Keep offline/embedded CASE_DATA fallback
+    });
+}
+
+// Initial Render & DB Sync
+renderTable();
+fetchFromDb();
+</script>
+</body>
+</html>

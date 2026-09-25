@@ -1,0 +1,29 @@
+สร้าง  python เพื่อเข้าเทรด  deriv.com ด้วย async ดังนี้ 
+    
+     
+  1. class Deriv ทำหน้าที 
+       - Connect
+       - ขอ Auth
+       - ขอ timeserver เมื่อได้มาแล้ว ให้กำหนดค่า localTime ที่เป็น ตัวแปร Global
+       - ร้องขอ Candle History ตาม timeframe กำหนดให้  ด้วย async
+       - ส่งค่า CandleHistory ที่ได้  ไห้ class EMA 
+       - เข้าเทรดด้วย async
+  2. class EMA
+       - ทำการคำนวณหา emaShort,emaLong และส่งกลับ ใน array ของ  Object { time:time,emaValue} 
+       - นำ  emaShort,emaLong ไป สร้างข้อมูล Analysis จาก class AnalysisEMA
+       - นำ ข้อมูล Analysis มา ตรวจ emaAbove ของแท่งล่าสุด ว่าควรจะเทรด Call หรือ PUT
+       - เรียกการ เข้าเทรด ด้วย class Deriv ตาม timeframe ที่กำหนดไว้ 
+  3. class AnalysisEMA
+      รับค่า emaShort,emaLong มาสร้างข้อมูล วิเคราะห์ดังนี้  array ของ 
+       { 
+         time: time,
+	 emaAbove : emaShort หรือ emaLong 
+       }
+   4.class ThreadControl เพื่อควบคุมเวลา สำหรับการทำงานต่างๆ  โดย รอบการ เรียกใช้งาน
+     จะเป็นดังนี้ ถ้า  วินาที ของ localTime ยังไม่ เป็น 0 ก็ให้ sleep รอจนกระทั่ง 0 ถึงเริมทำงาน หรือ startWork = true
+     เช่นถ้าระบุ timeframe ที่ 1 นาที เมื่อ startWork = true และ localTime มาถึง 1 นาที ก็จะเริ่ม process ตั้งแต่ 
+     Request CandleHostory->EMA ->AnalysisEMA->Trade และรอจน ผลการเทรดจบ 
+     กรณีที่ timeframe=3 ก็ให้ทำแบบเดียวกัน 
+     - timeFrame มี 1,3,5,10,15,30 นาที 
+
+  

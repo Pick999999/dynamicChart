@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Rust build artifacts
+target/
+**/target/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Database files (> 100MB exceeds GitHub limit)
+*.db
+*.sqlite
+*.sqlite3
+database.db
+
+# Log files
+*.log
+npm-debug.log*
+
+# Environment and IDE
+.env
+.DS_Store
+Thumbs.db

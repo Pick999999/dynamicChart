@@ -1,0 +1,3320 @@
+<!--
+================================================================================================
+ DynamicChart — รายละเอียดฟีเจอร์และโครงสร้างระบบ (Feature Overview & Architecture)
+================================================================================================
+ 1. ระบบเชื่อมต่อข้อมูลและ WebSocket (Deriv API V2 Integration):
+    - Auto-Connection: เมื่อกดขอข้อมูลแล้วยังไม่ได้เชื่อมต่อ ระบบจะทำการ Connect WebSocket ให้อัตโนมัติ
+    - Candle History Fetching: ดึงประวัติราคาแท่งเทียน เลือก Timeframe ได้ (1m, 3m, 5m, 15m, 30m, 60m, 240m, 1d)
+    - Tick History & Live Stream: ดึงราคา Tick ดิบย้อนหลัง และรองรับการสมัครรับราคา Real-time (Subscribe)
+    - Active Symbols Sync: ดึงรายชื่อสัญลักษณ์สินทรัพย์จริงจาก Deriv อัปเดตใส่ดร็อปดาวน์ให้อัตโนมัติ
+
+ 2. ระบบอินดิเคเตอร์ Smart Money Concepts (SMC):
+    - Structure Breaks: แสดงสัญญาณ CHoCH (Change of Character) และ BOS (Break of Structure)
+    - Swing Points: แสดงจุดสูงสุด/ต่ำสุดย่อย HH (Higher High), HL (Higher Low), LH (Lower High), LL (Lower Low)
+    - Order Blocks (OB): แรเงากล่องสี่เหลี่ยมแนวนอนตามระดับราคาจริงด้วย plugin backgroundColorZonesPlugin.js
+    - Fair Value Gaps (FVG): แรเงากล่องสี่เหลี่ยมแนวนอนโซนช่องว่างราคา (FVG)
+    - Equal Highs / Lows (EQH/EQL): ระบุโซนราคาทัดเทียมเพื่อดูสภาพคล่อง (Liquidity Zones)
+    - Premium & Discount Zones: แสดงเส้น Equilibrium (50%) พร้อมแรเงาโซนซื้อแพง/ซื้อถูก
+    - Sub-element Toggles: เปิด/ปิด การแสดงผลแต่ละองค์ประกอบของ SMC และเส้นราคาแนวนอน (Horizontal Lines) ได้อิสระ
+
+ 3. ชุดอินดิเคเตอร์ทางเทคนิค (Technical Indicators Suite):
+    - Moving Averages: รองรับ EMA, SMA, HMA, WMA ปรับแต่ง Period, Source (Close/Open/High/Low), Color, Line Width
+    - Bollinger Bands (BB): ปรับแต่ง Period, StdDev, สีเส้น Upper, Middle, Lower
+    - Horizontal Price Lines: เส้นราคาแนวนอน กำหนดระดับราคา สี และรูปแบบเส้น (Dashed, Solid, Dotted)
+
+ 4. เครื่องมือวิเคราะห์อัตโนมัติ (Full Analysis Engine — `FullAnalysisEngine.js`):
+    - Multi-Tab UI: มี 5 แท็บใต้กราฟสำหรับจัดเก็บและแสดงผลวิเคราะห์
+    - Automated Analysis Pipeline: คำนวณสัญญาณวิเคราะห์เทคนิคทันทีที่ดึง Candle เสร็จ แล้วส่ง JSON ไปยัง textarea `#textarea-full-analysis`
+
+ 5. การออกแบบประสบการณ์ผู้ใช้ (User Experience & UX Design):
+    - Glassmorphism Trading UI: หน้าจอธีมมืด สไตล์เว็บเทรดระดับพรีเมียม ปรับแต่งสีนุ่มนวลและสลับเลเยอร์สวยงาม
+    - Collapsible Sidebars: พับเก็บ/ขยาย พาแนลฝั่งซ้ายและฝั่งขวาได้อิสระเพื่อเพิ่มพื้นที่การแสดงผลกราฟ
+    - Waiting & Loading Overlay: แสดงหน้าจอรอสไตล์ Glassmorphic พร้อมข้อความบอกสถานะเชื่อมต่อแบบเรียลไทม์
+    - Chart Header Asset Badge: แสดงชื่อ Asset ที่กำลังเปิดอยู่บนหัวข้อกราฟ (เช่น Candlestick Chart — Volatility 100 Index)
+    - JSON Config Management: โหลด/ส่งออกไฟล์ JSON, เลือกลิสต์ไฟล์จาก pageconfig/ และกด ⭐ Save as Default (โหลดเปิดเพจมาใช้ทันที)
+    - Body-Level Modal Dialog: หน้าต่างป็อบอัพตั้งค่า ⚙️ อยู่ระดับ <body> ลอยตรงกลางจออย่างสมบูรณ์แบบ
+================================================================================================
+-->
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="DynamicChart — Interactive candlestick chart with dynamic technical indicators powered by Lightweight Charts v4.2">
+    <title>DynamicChart — Dynamic Indicator Charting</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================
+           DESIGN SYSTEM — Dark Trading Platform
+           ============================================ */
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --bg-glass: rgba(30, 41, 59, 0.55);
+            --border-glass: rgba(100, 116, 139, 0.25);
+            --border-glow: rgba(56, 189, 248, 0.15);
+
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            --accent-teal: #2dd4bf;
+            --accent-blue: #38bdf8;
+            --accent-purple: #a78bfa;
+            --accent-amber: #fbbf24;
+            --accent-red: #f87171;
+            --accent-green: #34d399;
+
+            --up: #26a69a;
+            --down: #ef5350;
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35), 0 0 1px rgba(255, 255, 255, 0.05);
+            --shadow-glow: 0 0 20px rgba(56, 189, 248, 0.08);
+
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Reset & Base */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(56, 189, 248, 0.06), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(167, 139, 250, 0.05), transparent);
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ============================================
+           LAYOUT
+           ============================================ */
+        .app-header {
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-bottom: 1px solid var(--border-glass);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10, 14, 26, 0.8);
+        }
+
+        .app-header .logo-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: #0a0e1a;
+            flex-shrink: 0;
+        }
+
+        .app-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .app-header .subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-left: auto;
+        }
+
+        .app-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr 0px;
+            column-gap: 20px;
+            row-gap: 20px;
+            padding: 20px 24px;
+            max-width: 100%;
+            box-sizing: border-box;
+            margin: 0 auto;
+            transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .app-layout.right-expanded {
+            grid-template-columns: 320px 1fr 340px;
+        }
+
+        .app-layout.left-collapsed {
+            grid-template-columns: 0px 1fr 0px;
+        }
+
+        .app-layout.left-collapsed.right-expanded {
+            grid-template-columns: 0px 1fr 340px;
+        }
+
+        .center-column {
+            min-width: 0;
+        }
+
+        .sidebar.left-sidebar {
+            width: 320px;
+            min-width: 320px;
+            box-sizing: border-box;
+            transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+            overflow: hidden;
+        }
+
+        .app-layout.left-collapsed .sidebar.left-sidebar {
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            transform: translateX(-20px);
+            width: 0;
+            min-width: 0;
+        }
+
+        .sidebar.right-sidebar {
+            width: 0;
+            min-width: 0;
+            box-sizing: border-box;
+            transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            transform: translateX(20px);
+        }
+
+        .app-layout.right-expanded .sidebar.right-sidebar {
+            opacity: 1;
+            pointer-events: auto;
+            visibility: visible;
+            transform: translateX(0);
+            width: 340px;
+            min-width: 340px;
+        }
+
+        @media (max-width: 1300px) {
+            .app-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .app-layout.left-collapsed,
+            .app-layout.right-expanded {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            display: inline-block;
+            transition: var(--transition);
+        }
+
+        .status-dot.connecting {
+            background: var(--accent-amber) !important;
+            box-shadow: 0 0 8px var(--accent-amber);
+        }
+
+        .status-dot.connected {
+            background: var(--accent-teal) !important;
+            box-shadow: 0 0 8px var(--accent-teal);
+        }
+
+        /* ============================================
+           CARDS / PANELS (Glassmorphism)
+           ============================================ */
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            backdrop-filter: blur(16px);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .panel:hover {
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow-card), var(--shadow-glow);
+        }
+
+        .panel-header {
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-glass);
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .panel-header .panel-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .panel-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .panel-body {
+            padding: 16px 18px;
+        }
+
+        /* ============================================
+           CHART CONTAINER
+           ============================================ */
+        .chart-panel {
+            min-height: 520px;
+        }
+
+        #chart-container {
+            width: 100%;
+            height: 500px;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        }
+
+        /* ============================================
+           SIDEBAR — Indicator Panel
+           ============================================ */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Indicator List */
+        .indicator-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .indicator-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .indicator-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .indicator-list::-webkit-scrollbar-thumb {
+            background: var(--border-glass);
+            border-radius: 2px;
+        }
+
+        .indicator-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid transparent;
+            transition: var(--transition);
+        }
+
+        .indicator-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--border-glass);
+        }
+
+        .indicator-item .color-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 6px currentColor;
+        }
+
+        .indicator-item .ind-label {
+            flex: 1;
+            font-size: 12.5px;
+            font-weight: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .indicator-item .ind-type {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .indicator-item.hidden-indicator {
+            opacity: 0.4;
+        }
+
+        .indicator-item .ind-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        /* Small Action Buttons */
+        .btn-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-glass);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            transition: var(--transition);
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border-color: var(--accent-blue);
+        }
+
+        .btn-icon.btn-remove:hover {
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+        }
+
+        /* ============================================
+           FORM — Add Indicator
+           ============================================ */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-glass);
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.12);
+        }
+
+        input[type="color"] {
+            padding: 3px 5px;
+            height: 38px;
+            cursor: pointer;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: 'Consolas', 'Fira Code', monospace;
+            font-size: 11.5px;
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           BUTTONS
+           ============================================ */
+        .btn {
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
+            color: #0a0e1a;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(45, 212, 191, 0.25);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+            border: 1px solid var(--border-glass);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-blue);
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        /* ============================================
+           DYNAMIC FORM FIELDS (shown/hidden by type)
+           ============================================ */
+        .form-field-period,
+        .form-field-source,
+        .form-field-color,
+        .form-field-lineWidth,
+        .form-field-stdDev,
+        .form-field-value,
+        .form-field-lineStyle,
+        .form-field-bbColors {
+            transition: var(--transition);
+        }
+
+        .form-field-stdDev,
+        .form-field-value,
+        .form-field-lineStyle,
+        .form-field-bbColors {
+            display: none;
+        }
+
+        /* ============================================
+           JSON EDITOR SECTION
+           ============================================ */
+        .json-section {
+            margin-top: 4px;
+        }
+
+        .json-section .btn-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        /* ============================================
+           EMPTY STATE
+           ============================================ */
+        .empty-state {
+            text-align: center;
+            padding: 24px 12px;
+            color: var(--text-muted);
+            font-size: 12.5px;
+        }
+
+        .empty-state .empty-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+            opacity: 0.4;
+        }
+
+        /* ============================================
+           ANIMATIONS
+           ============================================ */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .panel {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .indicator-item {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* ============================================
+           TOOLTIP
+           ============================================ */
+        .tooltip-wrap {
+            position: relative;
+        }
+
+        .tooltip-wrap::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+            border: 1px solid var(--border-glass);
+        }
+
+        .tooltip-wrap:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        /* ============================================
+           MODAL DIALOG (Edit Parameters)
+           ============================================ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 14, 26, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        .modal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), var(--shadow-glow);
+            width: 100%;
+            max-width: 440px;
+            overflow: hidden;
+            animation: slideIn 0.25s ease-out;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .modal-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 14px 20px;
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        /* ============================================
+           UNDER-CHART TAB PANELS
+           ============================================ */
+        .tab-header-bar {
+            display: flex;
+            gap: 2px;
+            border-bottom: 1px solid var(--border-glass);
+            background: rgba(255, 255, 255, 0.015);
+            padding: 0 10px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 12px 18px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-teal);
+            border-bottom-color: var(--accent-teal);
+            font-weight: 600;
+            background: rgba(45, 212, 191, 0.05);
+        }
+
+        .tab-content-panel {
+            display: none;
+        }
+
+        .tab-content-panel.active {
+            display: block;
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        .tab-content-panel textarea {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            color: #9fe8dc;
+            font-family: 'Consolas', 'Fira Code', 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            padding: 12px;
+            resize: vertical;
+            outline: none;
+        }
+
+        .tab-content-panel textarea:focus {
+            border-color: var(--accent-teal);
+            box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.12);
+        }
+
+        /* Trade Data Table & Asset Buttons (Tab 3) */
+        .trade-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        .trade-data-table th {
+            position: sticky;
+            top: 0;
+            background: #111827;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            padding: 10px 12px;
+            border-bottom: 2px solid var(--border-glass);
+            z-index: 5;
+        }
+
+        .trade-data-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
+        .trade-data-table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .profit-pos {
+            color: #34d399 !important;
+            font-weight: 600;
+        }
+
+        .profit-neg {
+            color: #f87171 !important;
+            font-weight: 600;
+        }
+
+        .asset-badge-btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .asset-badge-btn:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+
+        .asset-badge-btn.active {
+            background: linear-gradient(135deg, var(--accent-teal), var(--accent-blue));
+            color: #0a0e1a;
+            border-color: transparent;
+            box-shadow: 0 2px 10px rgba(45, 212, 191, 0.3);
+        }
+
+        .trade-data-table tr.highlighted-row {
+            background-color: rgba(56, 189, 248, 0.25) !important;
+            border-left: 3px solid var(--accent-blue);
+        }
+    </style>
+    <script src="pageSender.js"></script>
+</head>
+
+<body>
+
+    <!-- ═══════════ HEADER ═══════════ -->
+    <header class="app-header" id="app-header">
+        <div class="logo-icon">D</div>
+        <h1>DynamicChart (D:\Rust\dynamicChart\index.html)</h1>
+        <span class="subtitle">Lightweight Charts v4.2 · FullAnalysisEngine</span>
+    </header>
+
+    <!-- ═══════════ MAIN LAYOUT ═══════════ -->
+    <div class="app-layout">
+
+        <!-- ===== LEFT SIDEBAR: DERIV CONNECTION & TICK HISTORY ===== -->
+        <div class="sidebar left-sidebar" id="left-sidebar">
+
+            <!-- ── Connection Panel ── -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon" style="background:rgba(45,212,191,0.12); color:var(--accent-teal);">🔌</div>
+                    <h2>การเชื่อมต่อ</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="connectionType">โหมดเชื่อมต่อ</label>
+                        <select id="connectionType">
+                            <option value="new" selected>New Public (ไม่ต้องใช้ Token — พอสำหรับดึง Tick History)
+                            </option>
+                            <option value="otp">Private / OTP (ต้องใช้ App ID + Account ID + Token)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appId">App ID <span class="hint"
+                                style="display:inline; font-size:11px; color:var(--text-muted);">(เฉพาะโหมด
+                                Private)</span></label>
+                        <input type="text" id="appId" placeholder="เช่น 1089" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="accountId">Account ID</label>
+                        <input type="text" id="accountId" placeholder="เช่น CR12345" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="token">API Token</label>
+                        <input type="password" id="token" placeholder="token ที่เปิดสิทธิ์ read" />
+                    </div>
+
+                    <div class="btn-row" style="margin-top:12px; display:flex; gap:8px;">
+                        <button class="btn btn-primary" id="connectBtn" style="flex:1;">Connect</button>
+                        <button class="btn btn-secondary" id="disconnectBtn" disabled
+                            style="flex:1;">Disconnect</button>
+                    </div>
+
+                    <div class="status-line"
+                        style="margin-top:14px; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-secondary);">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="statusText">ยังไม่ได้เชื่อมต่อ</span>
+                    </div>
+
+                    <div id="accountPanel"
+                        style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed var(--border-glass); font-size:11.5px; color:var(--text-secondary);">
+                        <div>Account: <b id="accLoginid" style="color:var(--text-primary);">—</b></div>
+                        <div>WS Status: <b id="accWsStatus" style="color:var(--text-primary);">—</b></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Tick History Panel ── -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon" style="background:rgba(56,189,248,0.12); color:var(--accent-blue);">📈</div>
+                    <h2>ขอข้อมูล TICK HISTORY</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label for="candleSymbolSelect">Symbol</label>
+                        <select id="candleSymbolSelect">
+                            <option value="R_100">Volatility 100 Index (R_100)</option>
+                            <option value="R_75">Volatility 75 Index (R_75)</option>
+                            <option value="R_50">Volatility 50 Index (R_50)</option>
+                            <option value="1HZ100V">Volatility 100 (1s) Index</option>
+                            <option value="frxEURUSD">EUR/USD</option>
+                            <option value="frxGBPUSD">GBP/USD</option>
+                            <option value="frxUSDJPY">USD/JPY</option>
+                        </select>
+                        <div class="hint"
+                            style="font-size:11px; color:var(--text-muted); margin-top:4px; line-height:1.4;">
+                            รายการนี้จะถูกแทนที่อัตโนมัติด้วย Active Symbols จริงหลังเชื่อมต่อสำเร็จ
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="candleGranularitySelect">Timeframe (กรอบเวลาแท่งเทียน)</label>
+                        <select id="candleGranularitySelect">
+                            <option value="60" selected>1 นาที (1 Minute)</option>
+                            <option value="180">3 นาที (3 Minutes)</option>
+                            <option value="300">5 นาที (5 Minutes)</option>
+                            <option value="900">15 นาที (15 Minutes)</option>
+                            <option value="1800">30 นาที (30 Minutes)</option>
+                            <option value="3600">60 นาที (1 Hour)</option>
+                            <option value="14400">240 นาที (4 Hours)</option>
+                            <option value="86400">1 วัน (1 Day)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tickStart">Start (เว้นว่าง = ใช้ count แทน)</label>
+                        <input type="datetime-local" id="tickStart" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tickEnd">End (เว้นว่าง = latest)</label>
+                        <input type="datetime-local" id="tickEnd" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tickCount">จำนวน Tick (count, สูงสุด 5000 — ใช้เมื่อไม่ได้ระบุ Start)</label>
+                        <input type="number" id="tickCount" value="500" min="1" max="5000" />
+                    </div>
+
+                    <div class="form-group" style="margin-top:10px;">
+                        <label
+                            style="display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; font-size:12px; color:var(--text-secondary);">
+                            <input type="checkbox" id="tickSubscribeLive" style="width:auto;" />
+                            สมัครรับ Tick ใหม่ต่อเนื่องแบบสด (subscribe) หลังโหลดประวัติเสร็จ
+                        </label>
+                    </div>
+
+                    <div class="btn-row" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                        <button class="btn btn-primary" id="loadCandleDataBtn" style="flex:1;">Load History
+                            Candle</button>
+                        <button class="btn btn-primary" id="loadTickDataBtn" style="flex:1;">Load Tick Data</button>
+                        <button class="btn btn-secondary" id="stopLiveBtn" disabled
+                            style="width:100%; margin-top:4px;">หยุดสตรีมสด</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== CENTER: CHART & TABS ===== -->
+        <div class="center-column" style="display:flex; flex-direction:column; gap:20px;">
+            <div class="chart-panel panel" id="chartPanel" style="position:relative;">
+                <!-- Loading Screen Overlay -->
+                <div id="chart-loading-overlay"
+                    style="display:none; position:absolute; inset:0; z-index:100; background:rgba(15, 23, 42, 0.85); backdrop-filter:blur(8px); flex-direction:column; align-items:center; justify-content:center; gap:14px; border-radius:14px;">
+                    <div
+                        style="width:44px; height:44px; border:4px solid rgba(45,212,191,0.2); border-top-color:var(--accent-teal); border-radius:50%; animation:spin 0.8s linear infinite;">
+                    </div>
+                    <div id="loading-status-text"
+                        style="font-size:15px; font-weight:600; color:#f8fafc; text-align:center;">
+                        กำลังเชื่อมต่อ Deriv API...
+                    </div>
+                    <div id="loading-sub-text" style="font-size:12px; color:var(--text-muted); text-align:center;">
+                        กรุณารอสักครู่ ระบบกำลังจัดเตรียมข้อมูล
+                    </div>
+                </div>
+
+                <div class="panel-header" style="display:flex; align-items:center;">
+                    <button type="button" class="btn-icon tooltip-wrap" id="btn-toggle-left-sidebar"
+                        data-tooltip="Collapse Left Panel" style="margin-right: 6px;">
+                        ◀
+                    </button>
+                    <div class="panel-icon" style="background:rgba(45,212,191,0.12); color:var(--accent-teal);">📊</div>
+                    <h2>Candlestick Chart <span id="chart-asset-badge"
+                            style="font-size:13px; font-weight:500; color:var(--accent-teal); margin-left:6px;"></span>
+                    </h2>
+
+                    <button type="button" class="btn btn-secondary" id="btn-open-trade-data-modal"
+                        style="margin-left: 14px; padding: 6px 14px; font-size: 12px; gap: 6px; background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: var(--accent-blue);">
+                        📥 download Trade Data
+                    </button>
+
+                    <label style="display:inline-flex; align-items:center; gap:6px; margin-left: 16px; font-size: 12.5px; color: var(--text-secondary); cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="chk-draw-highlight" style="width: auto; margin: 0; cursor: pointer;">
+                        แรเงา + Draw Price Line
+                    </label>
+
+                    <label style="display:inline-flex; align-items:center; gap:6px; margin-left: 16px; font-size: 12.5px; color: var(--text-secondary); cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="chk-show-tooltip" style="width: auto; margin: 0; cursor: pointer;">
+                        แสดง Tooltip Age Cut
+                    </label>
+
+                    <button type="button" class="btn-icon tooltip-wrap" id="btn-toggle-right-sidebar"
+                        data-tooltip="Expand Right Panel" style="margin-left: auto;">
+                        ◀
+                    </button>
+                </div>
+                <div id="chart-container"></div>
+            </div>
+            
+            <!-- ── EMA Crossover Marker Panel ── -->
+            <div class="panel" id="ema-cross-panel" style="padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-lg); margin-top: -10px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="font-size: 13px; color: var(--text-secondary); font-weight: 600;">⚡ EMA Crossing Markers:</span>
+                    <button type="button" class="btn btn-secondary" id="btn-draw-ema2-cross" style="font-size: 11.5px; padding: 4px 12px; height: 30px; gap: 4px; border-color: rgba(56, 189, 248, 0.4); color: var(--accent-blue); background: rgba(56, 189, 248, 0.08); cursor: pointer;">
+                        📈 วาดจุดตัด EMA Short + Medium
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-draw-ema3-cross" style="font-size: 11.5px; padding: 4px 12px; height: 30px; gap: 4px; border-color: rgba(167, 139, 250, 0.4); color: var(--accent-purple); background: rgba(167, 139, 250, 0.08); cursor: pointer;">
+                        🔮 วาดจุดตัด EMA 3 เส้น (Short + Medium + Long)
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-draw-age12-cross" style="font-size: 11.5px; padding: 4px 12px; height: 30px; gap: 4px; border-color: rgba(52, 211, 153, 0.4); color: #34d399; background: rgba(52, 211, 153, 0.08); cursor: pointer;">
+                        📈 วาด Age Cut 12 (0-1)
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btn-draw-age123-cross" style="font-size: 11.5px; padding: 4px 12px; height: 30px; gap: 4px; border-color: rgba(251, 191, 36, 0.4); color: var(--accent-amber); background: rgba(251, 191, 36, 0.08); cursor: pointer;">
+                        🔮 วาด Age Cut 123 (0-1)
+                    </button>
+                </div>
+                <button type="button" class="btn btn-secondary" id="btn-clear-ema-cross" style="font-size: 11.5px; padding: 4px 12px; height: 30px; gap: 4px; color: var(--text-muted); cursor: pointer;">
+                    🧹 เคลียร์จุดตัด
+                </button>
+            </div>
+
+            <!-- ── Under-Chart Tabs Panel ── -->
+            <div class="panel" id="chartTabsPanel">
+                <div class="tab-header-bar">
+                    <button class="tab-btn active" data-tab="tab-full-analysis">Full Analysis Data</button>
+                    <button class="tab-btn" data-tab="tab-2">Tab 2</button>
+                    <button class="tab-btn" data-tab="tab-3">Tab 3 (Trade Table)</button>
+                    <button class="tab-btn" data-tab="tab-4">Tab 4</button>
+                    <button class="tab-btn" data-tab="tab-5">Tab 5</button>
+                </div>
+                <div class="panel-body" style="padding:12px;">
+                    <div class="tab-content-panel active" id="tab-full-analysis">
+                        <textarea id="textarea-full-analysis" spellcheck="false"
+                            placeholder="Full Analysis Data (Output from FullAnalysisEngine)..."></textarea>
+                    </div>
+                    <div class="tab-content-panel" id="tab-2">
+                        <div id="tab2-marker-container" style="padding:8px 12px; background:rgba(255,255,255,0.02); border-radius:var(--radius-sm); border:1px solid var(--border-glass); margin-bottom:10px;"></div>
+                        <textarea id="textarea-tab-2" spellcheck="false" placeholder="Tab 2 Content..."></textarea>
+                    </div>
+                    <div class="tab-content-panel" id="tab-3">
+                        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px; padding:8px 12px; background:rgba(255,255,255,0.02); border-radius:var(--radius-sm); border:1px solid var(--border-glass);">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" id="tab3-asset-buttons">
+                                <span style="font-size:12px; color:var(--text-secondary); font-weight:600;">Assets:</span>
+                                <span style="font-size:12px; color:var(--text-muted);">(ยังไม่มีข้อมูลจาก Tab 2)</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                <div id="tab3-marker-container"></div>
+                                <button type="button" class="btn btn-secondary" id="btn-parse-tab2" style="font-size:11px; padding:4px 10px; height:28px; gap:4px;">
+                                    🔄 Refresh Tab 2
+                                </button>
+                            </div>
+                        </div>
+                        <div id="tab3-summary-info" style="margin-bottom:8px; font-size:12px; color:var(--text-secondary); display:none;"></div>
+                        <div id="tab3-table-container" style="max-height:360px; overflow-y:auto; overflow-x:auto; border-radius:var(--radius-sm); border:1px solid var(--border-glass);">
+                            <div style="padding:40px; text-align:center; color:var(--text-muted); font-size:13px;">
+                                📊 กรุณาคลิก "Load From Host" หรือนำข้อมูล JSON ใส่ไว้ใน Tab 2 เพื่อสร้างตารางแสดงผล
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-content-panel" id="tab-4">
+                        <textarea id="textarea-tab-4" spellcheck="false" placeholder="Tab 4 Content..."></textarea>
+                    </div>
+                    <div class="tab-content-panel" id="tab-5">
+                        <textarea id="textarea-tab-5" spellcheck="false" placeholder="Tab 5 Content..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== RIGHT: SIDEBAR ===== -->
+        <div class="sidebar right-sidebar">
+
+            <!-- ── Active Indicators ── -->
+            <div class="panel" id="indicatorPanel">
+                <div class="panel-header">
+                    <div class="panel-icon" style="background:rgba(167,139,250,0.12); color:var(--accent-purple);">⚡
+                    </div>
+                    <h2>Active Indicators</h2>
+                </div>
+                <div class="panel-body">
+                    <ul class="indicator-list" id="indicator-list">
+                        <!-- populated dynamically -->
+                    </ul>
+                    <div class="empty-state" id="empty-indicators">
+                        <div class="empty-icon">📉</div>
+                        No indicators added yet
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Add Indicator ── -->
+            <div class="panel" id="addIndicatorPanel">
+                <div class="panel-header">
+                    <div class="panel-icon" style="background:rgba(56,189,248,0.12); color:var(--accent-blue);">＋</div>
+                    <h2>Add Indicator</h2>
+                </div>
+                <div class="panel-body">
+                    <form id="add-indicator-form" autocomplete="off">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="add-type">
+                                <option value="smc">SMC (Smart Money Concepts)</option>
+                                <option value="ema">EMA (Exponential Moving Average)</option>
+                                <option value="hma">HMA (Hull Moving Average)</option>
+                                <option value="wma">WMA (Weighted Moving Average)</option>
+                                <option value="sma">SMA (Simple Moving Average)</option>
+                                <option value="bb">Bollinger Bands</option>
+                                <option value="horizontalLine">Horizontal Line</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group form-field-period">
+                                <label>Period</label>
+                                <input type="number" id="add-period" value="20" min="1" max="500">
+                            </div>
+                            <div class="form-group form-field-source">
+                                <label>Source</label>
+                                <select id="add-source">
+                                    <option value="close">Close</option>
+                                    <option value="open">Open</option>
+                                    <option value="high">High</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group form-field-value" style="display:none;">
+                            <label>Price Value</label>
+                            <input type="number" id="add-value" value="105" step="0.01">
+                        </div>
+
+                        <div class="form-group form-field-stdDev" style="display:none;">
+                            <label>Std Deviation</label>
+                            <input type="number" id="add-stddev" value="2" min="0.1" max="5" step="0.1">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group form-field-color">
+                                <label>Color</label>
+                                <input type="color" id="add-color" value="#38bdf8">
+                            </div>
+                            <div class="form-group form-field-lineWidth">
+                                <label>Line Width</label>
+                                <input type="number" id="add-linewidth" value="1" min="1" max="5">
+                            </div>
+                        </div>
+
+                        <div class="form-group form-field-lineStyle" style="display:none;">
+                            <label>Line Style</label>
+                            <select id="add-linestyle">
+                                <option value="dashed">Dashed</option>
+                                <option value="solid">Solid</option>
+                                <option value="dotted">Dotted</option>
+                            </select>
+                        </div>
+
+                        <div class="form-field-bbColors" style="display:none;">
+                            <div class="form-row" style="margin-bottom:12px;">
+                                <div class="form-group">
+                                    <label>Upper Color</label>
+                                    <input type="color" id="add-bb-upper" value="#9C27B0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Middle Color</label>
+                                    <input type="color" id="add-bb-middle" value="#607D8B">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label>Lower Color</label>
+                                <input type="color" id="add-bb-lower" value="#9C27B0">
+                            </div>
+                        </div>
+
+                        <div class="form-field-smcOptions" style="display:none; margin-bottom:12px;">
+                            <label style="margin-bottom:6px; font-weight:600; color:var(--accent-teal);">SMC Elements to
+                                Display</label>
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                <label
+                                    style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                    <input type="checkbox" id="add-smc-choch" checked style="width:auto;"> CHoCH (Change
+                                    of Character)
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                    <input type="checkbox" id="add-smc-bos" checked style="width:auto;"> BOS (Break of
+                                    Structure)
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                    <input type="checkbox" id="add-smc-swing" checked style="width:auto;"> Swing Points
+                                    (HH, HL, LH, LL)
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                    <input type="checkbox" id="add-smc-ob" checked style="width:auto;"> Order Blocks
+                                    (OB)
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                    <input type="checkbox" id="add-smc-fvg" checked style="width:auto;"> Fair Value Gaps
+                                    (FVG)
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                    <input type="checkbox" id="add-smc-pd" checked style="width:auto;"> Premium /
+                                    Discount Zone
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none; font-weight:600; color:var(--accent-blue); margin-top:4px;">
+                                    <input type="checkbox" id="add-smc-lines" checked style="width:auto;"> Horizontal
+                                    Price Lines (เส้นราคาแนวนอน SMC)
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-full" id="btn-add-indicator">
+                            ＋ Add Indicator
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ── JSON Config ── -->
+            <div class="panel" id="jsonPanel">
+                <div class="panel-header">
+                    <div class="panel-icon" style="background:rgba(251,191,36,0.12); color:var(--accent-amber);">{ }
+                    </div>
+                    <h2>JSON Configuration</h2>
+                </div>
+                <div class="panel-body json-section">
+                    <div class="form-group" style="margin-bottom: 12px;">
+                        <label>Saved Configs (pageconfig/)</label>
+                        <div style="display: flex; gap: 6px;">
+                            <select id="config-file-select" style="flex: 1;">
+                                <option value="">-- เลือกไฟล์จาก pageconfig --</option>
+                            </select>
+                            <button type="button" class="btn-icon tooltip-wrap" data-tooltip="Refresh Files"
+                                id="btn-refresh-configs">🔄</button>
+                        </div>
+                    </div>
+                    <textarea id="json-editor" spellcheck="false"></textarea>
+                    <div class="btn-row" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;">
+                        <button class="btn btn-primary" id="btn-load-json" style="flex:1;">▶ Load Config</button>
+                        <button class="btn btn-secondary" id="btn-export-json" style="flex:1;">⬇ Export</button>
+                        <button class="btn btn-secondary" id="btn-save-default"
+                            style="width:100%; border-color:rgba(251,191,36,0.4); color:var(--accent-amber); margin-top:4px;">⭐
+                            Save as Default</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ EDIT INDICATOR MODAL ═══════════ -->
+    <div id="edit-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>⚙️ Edit Indicator Parameters</h3>
+                <button type="button" class="btn-icon" id="btn-close-edit-modal">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-indicator-form" autocomplete="off">
+                    <input type="hidden" id="edit-id">
+                    <input type="hidden" id="edit-type">
+
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label>Indicator ID</label>
+                        <input type="text" id="edit-display-id" readonly style="opacity:0.6; cursor:not-allowed;">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group edit-field-period">
+                            <label>Period</label>
+                            <input type="number" id="edit-period" min="1" max="500">
+                        </div>
+                        <div class="form-group edit-field-source">
+                            <label>Source</label>
+                            <select id="edit-source">
+                                <option value="close">Close</option>
+                                <option value="open">Open</option>
+                                <option value="high">High</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group edit-field-value" style="display:none;">
+                        <label>Price Value</label>
+                        <input type="number" id="edit-value" step="0.01">
+                    </div>
+
+                    <div class="form-group edit-field-stdDev" style="display:none;">
+                        <label>Std Deviation</label>
+                        <input type="number" id="edit-stddev" min="0.1" max="5" step="0.1">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group edit-field-color">
+                            <label>Color</label>
+                            <input type="color" id="edit-color">
+                        </div>
+                        <div class="form-group edit-field-lineWidth">
+                            <label>Line Width</label>
+                            <input type="number" id="edit-linewidth" min="1" max="5">
+                        </div>
+                    </div>
+
+                    <div class="form-group edit-field-lineStyle" style="display:none;">
+                        <label>Line Style</label>
+                        <select id="edit-linestyle">
+                            <option value="dashed">Dashed</option>
+                            <option value="solid">Solid</option>
+                            <option value="dotted">Dotted</option>
+                        </select>
+                    </div>
+
+                    <div class="edit-field-bbColors" style="display:none;">
+                        <div class="form-row" style="margin-bottom:12px;">
+                            <div class="form-group">
+                                <label>Upper Color</label>
+                                <input type="color" id="edit-bb-upper">
+                            </div>
+                            <div class="form-group">
+                                <label>Middle Color</label>
+                                <input type="color" id="edit-bb-middle">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label>Lower Color</label>
+                            <input type="color" id="edit-bb-lower">
+                        </div>
+                    </div>
+                    <div class="edit-field-smcOptions" style="display:none; margin-bottom:12px;">
+                        <label style="margin-bottom:6px; font-weight:600; color:var(--accent-teal);">SMC Elements to
+                            Display</label>
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                            <label
+                                style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                <input type="checkbox" id="edit-smc-choch" style="width:auto;"> CHoCH (Change of
+                                Character)
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                <input type="checkbox" id="edit-smc-bos" style="width:auto;"> BOS (Break of Structure)
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                <input type="checkbox" id="edit-smc-swing" style="width:auto;"> Swing Points (HH, HL,
+                                LH, LL)
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                <input type="checkbox" id="edit-smc-ob" style="width:auto;"> Order Blocks (OB)
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                <input type="checkbox" id="edit-smc-fvg" style="width:auto;"> Fair Value Gaps (FVG)
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                <input type="checkbox" id="edit-smc-eqhl" style="width:auto;"> Equal Highs / Lows
+                                (EQH/EQL)
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none;">
+                                <input type="checkbox" id="edit-smc-pd" style="width:auto;"> Premium / Discount Zone
+                            </label>
+                            <label
+                                style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; text-transform:none; font-weight:600; color:var(--accent-blue); margin-top:4px;">
+                                <input type="checkbox" id="edit-smc-lines" style="width:auto;"> Horizontal Price Lines
+                                (เส้นราคาแนวนอน SMC)
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-edit">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btn-save-edit">💾 Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ TRADE DATA MODAL ═══════════ -->
+    <div id="trade-data-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>📥 Download Trade Data From Host</h3>
+                <button type="button" class="btn-icon" id="btn-close-trade-modal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label for="trade-data-datepicker">เลือกวันที่ (Date)</label>
+                    <input type="date" id="trade-data-datepicker" />
+                </div>
+                <div id="trade-modal-status" style="display:none; padding:10px 12px; border-radius:var(--radius-sm); font-size:12px; line-height:1.4;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-trade-modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btn-load-from-host">⚡ Load From Host</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ SCRIPTS ═══════════ -->
+    <script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="./indicator/FullAnalysisEngine.js"></script>
+    <script src="./smc/SMCIndicator.js"></script>
+    <script src="./smc/backgroundColorZonesPlugin.js"></script>
+    <script src="./dynamicChart.js"></script>
+    <script src="./derivClass/derivClass_V2.js"></script>
+    <script src="./getHistoryTradeFromHost.js"></script>
+    <script src="./clsDrawMarker.js"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            // ────────────────────────────────────────
+            //  GENERATE SAMPLE CANDLESTICK DATA
+            //  ~120 bars of random-walk OHLC
+            // ────────────────────────────────────────
+            function generateSampleCandles(count, startDate, startPrice) {
+                const candles = [];
+                let price = startPrice;
+                const baseDate = new Date(startDate);
+
+                for (let i = 0; i < count; i++) {
+                    const date = new Date(baseDate);
+                    date.setDate(date.getDate() + i);
+                    const dateStr = date.toISOString().slice(0, 10);
+
+                    // Random walk
+                    const change = (Math.random() - 0.48) * 3;
+                    const open = price;
+                    const close = price + change;
+                    const high = Math.max(open, close) + Math.random() * 2;
+                    const low = Math.min(open, close) - Math.random() * 2;
+
+                    candles.push({
+                        time: dateStr,
+                        open: +open.toFixed(2),
+                        high: +high.toFixed(2),
+                        low: +low.toFixed(2),
+                        close: +close.toFixed(2),
+                    });
+
+                    price = close;
+                }
+                return candles;
+            }
+
+            const sampleCandles = generateSampleCandles(120, '2026-02-01', 100);
+
+            // ────────────────────────────────────────
+            //  DEFAULT JSON CONFIG
+            // ────────────────────────────────────────
+            const defaultConfig = {
+                chart: {
+                    container: 'chart-container',
+                    width: 800,
+                    height: 500,
+                    options: {
+                        layout: {
+                            background: { color: '#0f1629' },
+                            textColor: '#94a3b8',
+                        },
+                        grid: {
+                            vertLines: { color: 'rgba(255,255,255,0.03)' },
+                            horzLines: { color: 'rgba(255,255,255,0.03)' },
+                        },
+                        timeScale: {
+                            timeVisible: true,
+                            secondsVisible: false,
+                        },
+                    },
+                },
+                candle: {
+                    id: 'main-candle',
+                    data: sampleCandles,
+                    options: {
+                        upColor: '#26a69a',
+                        downColor: '#ef5350',
+                        borderVisible: false,
+                        wickUpColor: '#26a69a',
+                        wickDownColor: '#ef5350',
+                        wickVisible: true,
+                    },
+                },
+                indicators: [
+                    {
+                        id: 'smc-main',
+                        type: 'smc',
+                        visible: true,
+                        showChoch: true,
+                        showBOS: true,
+                        showSwingPoints: true,
+                        showOrderBlocks: true,
+                        showFVG: true,
+                        showEqualHL: true,
+                        showPremiumDiscount: true,
+                        showPriceLines: true,
+                    },
+                    {
+                        id: 'ema-20',
+                        type: 'ema',
+                        period: 20,
+                        source: 'close',
+                        visible: true,
+                        color: '#38bdf8',
+                        lineWidth: 1,
+                    },
+                    {
+                        id: 'hma-50',
+                        type: 'hma',
+                        period: 50,
+                        source: 'close',
+                        visible: true,
+                        color: '#fbbf24',
+                        lineWidth: 1,
+                    },
+                    {
+                        id: 'wma-14',
+                        type: 'wma',
+                        period: 14,
+                        source: 'close',
+                        visible: false,
+                        color: '#34d399',
+                        lineWidth: 1,
+                    },
+                    {
+                        id: 'bb-20',
+                        type: 'bb',
+                        period: 20,
+                        stdDev: 2,
+                        source: 'close',
+                        visible: true,
+                        colors: { upper: '#a78bfa', middle: '#64748b', lower: '#a78bfa' },
+                        lineWidth: 1,
+                    },
+                    {
+                        id: 'hline-resistance',
+                        type: 'horizontalLine',
+                        value: 108.5,
+                        visible: true,
+                        color: '#f87171',
+                        lineStyle: 'dashed',
+                        lineWidth: 1,
+                    },
+                ],
+            };
+
+            // ────────────────────────────────────────
+            //  CHECK & LOAD SAVED DEFAULT CONFIG
+            // ────────────────────────────────────────
+            const savedDefaultStr = localStorage.getItem('dynamicChartDefaultConfig');
+            if (savedDefaultStr) {
+                try {
+                    const parsedDefault = JSON.parse(savedDefaultStr);
+                    if (parsedDefault && (parsedDefault.indicators || parsedDefault.chart)) {
+                        if (Array.isArray(parsedDefault.indicators)) {
+                            defaultConfig.indicators = parsedDefault.indicators;
+                        }
+                        if (parsedDefault.chart && parsedDefault.chart.options) {
+                            Object.assign(defaultConfig.chart.options, parsedDefault.chart.options);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[DynamicChart] Error parsing saved default config from localStorage:', e);
+                }
+            }
+
+            // ────────────────────────────────────────
+            //  INITIALIZE CHART
+            // ────────────────────────────────────────
+            const chart = new DynamicChart(defaultConfig);
+
+            // Fetch server default.json if available
+            fetch('php/save_config.php?file=default.json')
+                .then(res => res.ok ? res.json() : null)
+                .then(serverDefault => {
+                    if (serverDefault && (serverDefault.indicators || serverDefault.chart)) {
+                        localStorage.setItem('dynamicChartDefaultConfig', JSON.stringify(serverDefault));
+                        if (window.dynamicChart) {
+                            if (!serverDefault.candle || !Array.isArray(serverDefault.candle.data) || serverDefault.candle.data.length === 0) {
+                                if (!serverDefault.candle) serverDefault.candle = {};
+                                serverDefault.candle.data = sampleCandles;
+                            }
+                            window.dynamicChart.loadConfig(serverDefault);
+                            renderIndicatorList();
+                            if (jsonEditor) jsonEditor.value = JSON.stringify(serverDefault, null, 2);
+                        }
+                    }
+                })
+                .catch(() => { });
+
+            // ────────────────────────────────────────
+            //  UI: INDICATOR LIST
+            // ────────────────────────────────────────
+            const indicatorListEl = document.getElementById('indicator-list');
+            const emptyIndicatorsEl = document.getElementById('empty-indicators');
+
+            function renderIndicatorList() {
+                indicatorListEl.innerHTML = '';
+                const indicators = chart.getAllIndicators();
+
+                if (indicators.length === 0) {
+                    emptyIndicatorsEl.style.display = 'block';
+                    return;
+                }
+                emptyIndicatorsEl.style.display = 'none';
+
+                indicators.forEach(ind => {
+                    const li = document.createElement('li');
+                    li.className = 'indicator-item' + (ind.visible ? '' : ' hidden-indicator');
+                    li.id = 'ind-item-' + ind.id;
+
+                    // Color dot
+                    const dotColor = ind.config.colors
+                        ? ind.config.colors.middle || ind.config.colors.upper || '#607D8B'
+                        : ind.config.color || '#38bdf8';
+
+                    // Label text
+                    const typeLabel = ind.type.toUpperCase();
+                    let detail = '';
+                    if (ind.type === 'horizontalLine') {
+                        detail = 'Value: ' + (ind.config.value || 0);
+                    } else if (ind.type === 'bb') {
+                        detail = 'Period: ' + (ind.config.period || 20) + ', σ: ' + (ind.config.stdDev || 2);
+                    } else {
+                        detail = 'Period: ' + (ind.config.period || 20);
+                    }
+
+                    li.innerHTML = `
+                    <span class="color-dot" style="color:${dotColor}; background:${dotColor};"></span>
+                    <span class="ind-label">
+                        <span>${ind.id}</span>
+                        <span class="ind-type">${typeLabel} · ${detail}</span>
+                    </span>
+                    <span class="ind-actions">
+                        <button class="btn-icon tooltip-wrap" data-tooltip="${ind.visible ? 'Hide' : 'Show'}" data-action="toggle" data-id="${ind.id}">
+                            ${ind.visible ? '👁' : '🚫'}
+                        </button>
+                        <button class="btn-icon tooltip-wrap" data-tooltip="Edit Parameters" data-action="edit" data-id="${ind.id}">
+                            ⚙️
+                        </button>
+                        <button class="btn-icon btn-remove tooltip-wrap" data-tooltip="Remove" data-action="remove" data-id="${ind.id}">
+                            ✕
+                        </button>
+                    </span>
+                `;
+                    indicatorListEl.appendChild(li);
+                });
+
+                // Add event listeners for action buttons
+                indicatorListEl.querySelectorAll('.btn-icon[data-action]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const action = btn.getAttribute('data-action');
+                        const id = btn.getAttribute('data-id');
+                        if (action === 'toggle') {
+                            chart.toggleIndicator(id);
+                            renderIndicatorList();
+                            saveCurrentAsDefault(true);
+                        } else if (action === 'edit') {
+                            openEditModal(id);
+                        } else if (action === 'remove') {
+                            chart.removeIndicator(id);
+                            renderIndicatorList();
+                            saveCurrentAsDefault(true);
+                        }
+                    });
+                });
+            }
+
+            renderIndicatorList();
+
+            // ────────────────────────────────────────
+            //  UI: ADD INDICATOR FORM
+            // ────────────────────────────────────────
+            const addTypeSelect = document.getElementById('add-type');
+            const addForm = document.getElementById('add-indicator-form');
+
+            // Dynamic form field visibility based on type
+            function updateFormFields() {
+                const type = addTypeSelect.value;
+
+                // Fields to show per type
+                const isMA = ['ema', 'hma', 'wma', 'sma'].includes(type);
+                const isBB = type === 'bb';
+                const isHL = type === 'horizontalLine';
+                const isSMC = type === 'smc';
+
+                // Period + Source: shown for MA and BB
+                document.querySelector('.form-field-period').style.display = (isMA || isBB) ? '' : 'none';
+                document.querySelector('.form-field-source').style.display = (isMA || isBB) ? '' : 'none';
+
+                // Value: only horizontal line
+                document.querySelector('.form-field-value').style.display = isHL ? '' : 'none';
+
+                // StdDev: only BB
+                document.querySelector('.form-field-stdDev').style.display = isBB ? '' : 'none';
+
+                // Single color: MA and horizontal line
+                document.querySelector('.form-field-color').style.display = (isMA || isHL) ? '' : 'none';
+
+                // Line Style: only horizontal line
+                document.querySelector('.form-field-lineStyle').style.display = isHL ? '' : 'none';
+
+                // BB Colors: only BB
+                document.querySelector('.form-field-bbColors').style.display = isBB ? 'block' : 'none';
+
+                // SMC Options: only SMC
+                document.querySelector('.form-field-smcOptions').style.display = isSMC ? 'block' : 'none';
+
+                // Line Width: shown for MA, BB, Horizontal Line
+                document.querySelector('.form-field-lineWidth').style.display = isSMC ? 'none' : '';
+            }
+
+            addTypeSelect.addEventListener('change', updateFormFields);
+            updateFormFields();
+
+            // Counter for auto-generating unique IDs
+            let addCounter = 0;
+
+            addForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const type = addTypeSelect.value;
+                addCounter++;
+
+                let cfg = {
+                    id: type + '-custom-' + addCounter,
+                    type: type,
+                    visible: true,
+                    lineWidth: parseInt(document.getElementById('add-linewidth').value) || 1,
+                };
+
+                if (type === 'smc') {
+                    cfg.showChoch = document.getElementById('add-smc-choch').checked;
+                    cfg.showBOS = document.getElementById('add-smc-bos').checked;
+                    cfg.showSwingPoints = document.getElementById('add-smc-swing').checked;
+                    cfg.showOrderBlocks = document.getElementById('add-smc-ob').checked;
+                    cfg.showFVG = document.getElementById('add-smc-fvg').checked;
+                    cfg.showEqualHL = document.getElementById('add-smc-eqhl').checked;
+                    cfg.showPremiumDiscount = document.getElementById('add-smc-pd').checked;
+                    cfg.showPriceLines = document.getElementById('add-smc-lines').checked;
+                    cfg.id = 'smc-main-' + addCounter;
+                } else if (['ema', 'hma', 'wma', 'sma'].includes(type)) {
+                    cfg.period = parseInt(document.getElementById('add-period').value) || 20;
+                    cfg.source = document.getElementById('add-source').value;
+                    cfg.color = document.getElementById('add-color').value;
+                    cfg.id = type + '-' + cfg.period + '-c' + addCounter;
+                } else if (type === 'bb') {
+                    cfg.period = parseInt(document.getElementById('add-period').value) || 20;
+                    cfg.stdDev = parseFloat(document.getElementById('add-stddev').value) || 2;
+                    cfg.source = document.getElementById('add-source').value;
+                    cfg.colors = {
+                        upper: document.getElementById('add-bb-upper').value,
+                        middle: document.getElementById('add-bb-middle').value,
+                        lower: document.getElementById('add-bb-lower').value,
+                    };
+                    cfg.id = 'bb-' + cfg.period + '-c' + addCounter;
+                } else if (type === 'horizontalLine') {
+                    cfg.value = parseFloat(document.getElementById('add-value').value) || 100;
+                    cfg.color = document.getElementById('add-color').value;
+                    cfg.lineStyle = document.getElementById('add-linestyle').value;
+                    cfg.id = 'hline-c' + addCounter;
+                }
+
+                chart.addIndicator(cfg);
+                renderIndicatorList();
+                saveCurrentAsDefault(true);
+            });
+
+            // ────────────────────────────────────────
+            //  UI: JSON CONFIG EDITOR
+            // ────────────────────────────────────────
+            const jsonEditor = document.getElementById('json-editor');
+            const btnLoadJson = document.getElementById('btn-load-json');
+            const btnExportJson = document.getElementById('btn-export-json');
+
+            // Populate editor with current config
+            jsonEditor.value = JSON.stringify(defaultConfig, null, 2);
+
+            btnLoadJson.addEventListener('click', () => {
+                let config;
+                try {
+                    config = JSON.parse(jsonEditor.value);
+                } catch (parseErr) {
+                    alert('JSON syntax error: ' + parseErr.message);
+                    return;
+                }
+                try {
+                    // ถ้าไม่มี candle data → ใช้ sample
+                    if (!config.candle || !Array.isArray(config.candle.data) || config.candle.data.length === 0) {
+                        if (!config.candle) config.candle = {};
+                        config.candle.data = sampleCandles;
+                    }
+                    chart.loadConfig(config);
+                    renderIndicatorList();
+                } catch (err) {
+                    console.error('[DynamicChart] Load config error:', err);
+                    alert('Error loading config: ' + err.message);
+                }
+            });
+
+            btnExportJson.addEventListener('click', async () => {
+                // Build current state as JSON
+                const currentIndicators = chart.getAllIndicators().map(ind => ind.config);
+                const exportObj = {
+                    chart: defaultConfig.chart,
+                    candle: {
+                        id: 'main-candle',
+                        data: [],
+                        options: defaultConfig.candle.options,
+                    },
+                    indicators: currentIndicators,
+                };
+
+                const jsonStr = JSON.stringify(exportObj, null, 2);
+                jsonEditor.value = jsonStr;
+
+                // ถามชื่อไฟล์จากผู้ใช้
+                const defaultFilename = `chart_config_${new Date().toISOString().slice(0, 10)}.json`;
+                const customFilename = prompt('ตั้งชื่อไฟล์สำหรับการเซฟลงโฟลเดอร์ pageconfig:', defaultFilename);
+                if (customFilename === null) return; // กดยกเลิก
+
+                const filename = customFilename.trim() || defaultFilename;
+
+                // ลองส่ง request ไปหา PHP script (php/save_config.php)
+                try {
+                    const res = await fetch('php/save_config.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename, config: exportObj }),
+                    });
+
+                    if (res.ok) {
+                        const result = await res.json();
+                        if (result.success) {
+                            alert(`✅ ${result.message}\nตำแหน่งไฟล์: ${result.path}`);
+                            loadSavedConfigFileList(); // อัปเดต Dropdown ทันทีหลังจาก Export
+                            return;
+                        }
+                    }
+                } catch (err) {
+                    console.warn('PHP server php/save_config.php unreachable, using browser download fallback:', err);
+                }
+
+                // Fallback: หากไม่ได้รันผ่าน PHP Web Server หรือเปิดผ่าน file:// ให้ดาวน์โหลดผ่านเบราว์เซอร์
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename.endsWith('.json') ? filename : filename + '.json';
+                a.click();
+                URL.revokeObjectURL(url);
+                alert(`📥 ดาวน์โหลดไฟล์ ${a.download} เรียบร้อยแล้ว (ผ่านเบราว์เซอร์)`);
+            });
+
+            // ────────────────────────────────────────
+            //  UI: SAVE AS DEFAULT CONFIG HELPER & HANDLER
+            // ────────────────────────────────────────
+            async function saveCurrentAsDefault(silent = false) {
+                const currentIndicators = chart.getAllIndicators().map(ind => {
+                    const cfg = Object.assign({}, ind.config);
+                    cfg.visible = ind.visible;
+                    return cfg;
+                });
+                const configToSave = {
+                    chart: defaultConfig.chart,
+                    candle: {
+                        id: 'main-candle',
+                        data: [],
+                        options: defaultConfig.candle.options,
+                    },
+                    indicators: currentIndicators,
+                };
+
+                const configStr = JSON.stringify(configToSave, null, 2);
+                if (jsonEditor) jsonEditor.value = configStr;
+
+                // 1. Save in localStorage for immediate client persistence
+                localStorage.setItem('dynamicChartDefaultConfig', configStr);
+
+                // 2. Save on server via php/save_config.php as default.json (or /api/save-config fallback)
+                let savedOnServer = false;
+                try {
+                    const res = await fetch('php/save_config.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename: 'default.json', config: configToSave }),
+                    });
+                    if (res.ok) {
+                        const contentType = res.headers.get('content-type') || '';
+                        if (contentType.includes('application/json')) {
+                            const result = await res.json();
+                            if (result && result.success) {
+                                savedOnServer = true;
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn('PHP server php/save_config.php unreachable:', err);
+                }
+
+                if (!savedOnServer) {
+                    try {
+                        const resApi = await fetch('/api/save-config', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ filename: 'default.json', config: configToSave }),
+                        });
+                        if (resApi.ok) {
+                            const resultApi = await resApi.json();
+                            if (resultApi && resultApi.success) {
+                                savedOnServer = true;
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('/api/save-config unreachable:', err);
+                    }
+                }
+
+                if (typeof loadSavedConfigFileList === 'function') {
+                    loadSavedConfigFileList();
+                }
+
+                if (!silent) {
+                    if (savedOnServer) {
+                        alert('⭐ บันทึกการตั้งค่าเป็น Default เรียบร้อยแล้ว!\nเมื่อเปิดเพจขึ้นมาใหม่ ระบบจะนำค่านิยมนี้มาแสดงและใช้งานให้อัตโนมัติ');
+                    } else {
+                        alert('⭐ บันทึกการตั้งค่าเป็น Default ในเบราว์เซอร์เรียบร้อยแล้ว!');
+                    }
+                }
+            }
+
+            const btnSaveDefault = document.getElementById('btn-save-default');
+            if (btnSaveDefault) {
+                btnSaveDefault.addEventListener('click', () => {
+                    saveCurrentAsDefault(false);
+                });
+            }
+
+            // ────────────────────────────────────────
+            //  SAVED CONFIGS SELECTOR & LOADER
+            // ────────────────────────────────────────
+            const configFileSelect = document.getElementById('config-file-select');
+            const btnRefreshConfigs = document.getElementById('btn-refresh-configs');
+
+            async function loadSavedConfigFileList() {
+                if (!configFileSelect) return;
+                try {
+                    const res = await fetch('php/save_config.php');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.success && Array.isArray(data.files)) {
+                            configFileSelect.innerHTML = '<option value="">-- เลือกไฟล์จาก pageconfig --</option>';
+                            data.files.forEach(filename => {
+                                const opt = document.createElement('option');
+                                opt.value = filename;
+                                opt.textContent = filename;
+                                configFileSelect.appendChild(opt);
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Could not fetch pageconfig list from PHP server:', err);
+                }
+            }
+
+            if (btnRefreshConfigs) {
+                btnRefreshConfigs.addEventListener('click', loadSavedConfigFileList);
+            }
+
+            if (configFileSelect) {
+                configFileSelect.addEventListener('change', async () => {
+                    const selectedFile = configFileSelect.value;
+                    if (!selectedFile) return;
+
+                    try {
+                        const res = await fetch(`php/save_config.php?file=${encodeURIComponent(selectedFile)}`);
+                        if (res.ok) {
+                            const config = await res.json();
+                            jsonEditor.value = JSON.stringify(config, null, 2);
+
+                            // โหลด config เข้ากราฟทันที
+                            if (!config.candle || !Array.isArray(config.candle.data) || config.candle.data.length === 0) {
+                                if (!config.candle) config.candle = {};
+                                config.candle.data = sampleCandles;
+                            }
+                            chart.loadConfig(config);
+                            renderIndicatorList();
+                        } else {
+                            alert('ไม่สามารถอ่านไฟล์ ' + selectedFile + ' ได้');
+                        }
+                    } catch (err) {
+                        console.error('Error loading config file:', err);
+                        alert('Error: ' + err.message);
+                    }
+                });
+            }
+
+            // โหลดรายชื่อไฟล์เมื่อเริ่มใช้งาน
+            loadSavedConfigFileList();
+
+            // ────────────────────────────────────────
+            //  EDIT MODAL LOGIC
+            // ────────────────────────────────────────
+            const editModal = document.getElementById('edit-modal');
+            const btnCloseEditModal = document.getElementById('btn-close-edit-modal');
+            const btnCancelEdit = document.getElementById('btn-cancel-edit');
+            const btnSaveEdit = document.getElementById('btn-save-edit');
+
+            function openEditModal(id) {
+                const ind = chart.getIndicator(id);
+                if (!ind) return;
+
+                const cfg = ind.config;
+                const type = (cfg.type || '').toLowerCase();
+
+                document.getElementById('edit-id').value = id;
+                document.getElementById('edit-type').value = type;
+                document.getElementById('edit-display-id').value = id + ' (' + type.toUpperCase() + ')';
+
+                // Show/Hide fields based on type
+                const isMA = ['ema', 'hma', 'wma', 'sma'].includes(type);
+                const isBB = type === 'bb';
+                const isHL = type === 'horizontalline';
+                const isSMC = type === 'smc';
+
+                document.querySelector('.edit-field-period').style.display = (isMA || isBB) ? '' : 'none';
+                document.querySelector('.edit-field-source').style.display = (isMA || isBB) ? '' : 'none';
+                document.querySelector('.edit-field-value').style.display = isHL ? '' : 'none';
+                document.querySelector('.edit-field-stdDev').style.display = isBB ? '' : 'none';
+                document.querySelector('.edit-field-color').style.display = (isMA || isHL) ? '' : 'none';
+                document.querySelector('.edit-field-lineStyle').style.display = isHL ? '' : 'none';
+                document.querySelector('.edit-field-bbColors').style.display = isBB ? 'block' : 'none';
+                document.querySelector('.edit-field-smcOptions').style.display = isSMC ? 'block' : 'none';
+                document.querySelector('.edit-field-lineWidth').style.display = isSMC ? 'none' : '';
+
+                // Populate current values
+                if (isSMC) {
+                    document.getElementById('edit-smc-choch').checked = cfg.showChoch !== false;
+                    document.getElementById('edit-smc-bos').checked = cfg.showBOS !== false;
+                    document.getElementById('edit-smc-swing').checked = cfg.showSwingPoints !== false;
+                    document.getElementById('edit-smc-ob').checked = cfg.showOrderBlocks !== false;
+                    document.getElementById('edit-smc-fvg').checked = cfg.showFVG !== false;
+                    document.getElementById('edit-smc-eqhl').checked = cfg.showEqualHL !== false;
+                    document.getElementById('edit-smc-pd').checked = cfg.showPremiumDiscount !== false;
+                    document.getElementById('edit-smc-lines').checked = cfg.showPriceLines !== false;
+                }
+                if (isMA || isBB) {
+                    document.getElementById('edit-period').value = cfg.period || 20;
+                    document.getElementById('edit-source').value = cfg.source || 'close';
+                }
+                if (isMA || isHL) {
+                    document.getElementById('edit-color').value = cfg.color || '#38bdf8';
+                }
+                if (isHL) {
+                    document.getElementById('edit-value').value = cfg.value || 100;
+                    document.getElementById('edit-linestyle').value = cfg.lineStyle || 'dashed';
+                }
+                if (isBB) {
+                    document.getElementById('edit-stddev').value = cfg.stdDev || 2;
+                    const colors = cfg.colors || {};
+                    document.getElementById('edit-bb-upper').value = colors.upper || '#9C27B0';
+                    document.getElementById('edit-bb-middle').value = colors.middle || '#607D8B';
+                    document.getElementById('edit-bb-lower').value = colors.lower || '#9C27B0';
+                }
+                document.getElementById('edit-linewidth').value = cfg.lineWidth || 1;
+
+                editModal.style.display = 'flex';
+            }
+
+            function closeEditModal() {
+                editModal.style.display = 'none';
+            }
+
+            function saveModalEdits() {
+                const id = document.getElementById('edit-id').value;
+                const type = document.getElementById('edit-type').value;
+
+                let updatedProps = {
+                    lineWidth: parseInt(document.getElementById('edit-linewidth').value) || 1
+                };
+
+                const isMA = ['ema', 'hma', 'wma', 'sma'].includes(type);
+                const isBB = type === 'bb';
+                const isHL = type === 'horizontalline';
+                const isSMC = type === 'smc';
+
+                if (isSMC) {
+                    updatedProps.showChoch = document.getElementById('edit-smc-choch').checked;
+                    updatedProps.showBOS = document.getElementById('edit-smc-bos').checked;
+                    updatedProps.showSwingPoints = document.getElementById('edit-smc-swing').checked;
+                    updatedProps.showOrderBlocks = document.getElementById('edit-smc-ob').checked;
+                    updatedProps.showFVG = document.getElementById('edit-smc-fvg').checked;
+                    updatedProps.showEqualHL = document.getElementById('edit-smc-eqhl').checked;
+                    updatedProps.showPremiumDiscount = document.getElementById('edit-smc-pd').checked;
+                    updatedProps.showPriceLines = document.getElementById('edit-smc-lines').checked;
+                } else if (isMA) {
+                    updatedProps.period = parseInt(document.getElementById('edit-period').value) || 20;
+                    updatedProps.source = document.getElementById('edit-source').value;
+                    updatedProps.color = document.getElementById('edit-color').value;
+                } else if (isBB) {
+                    updatedProps.period = parseInt(document.getElementById('edit-period').value) || 20;
+                    updatedProps.source = document.getElementById('edit-source').value;
+                    updatedProps.stdDev = parseFloat(document.getElementById('edit-stddev').value) || 2;
+                    updatedProps.colors = {
+                        upper: document.getElementById('edit-bb-upper').value,
+                        middle: document.getElementById('edit-bb-middle').value,
+                        lower: document.getElementById('edit-bb-lower').value,
+                    };
+                } else if (isHL) {
+                    updatedProps.value = parseFloat(document.getElementById('edit-value').value) || 100;
+                    updatedProps.color = document.getElementById('edit-color').value;
+                    updatedProps.lineStyle = document.getElementById('edit-linestyle').value;
+                }
+
+                chart.updateIndicator(id, updatedProps);
+                renderIndicatorList();
+
+                // Auto-save updated config to default (localStorage & pageconfig/default.json)
+                saveCurrentAsDefault(true);
+
+                closeEditModal();
+            }
+
+            if (btnCloseEditModal) btnCloseEditModal.addEventListener('click', closeEditModal);
+            if (btnCancelEdit) btnCancelEdit.addEventListener('click', closeEditModal);
+            if (btnSaveEdit) btnSaveEdit.addEventListener('click', saveModalEdits);
+
+            // ปิด modal เมื่อคลิกพื้นหลังภายนอก
+            window.addEventListener('click', (e) => {
+                if (e.target === editModal) closeEditModal();
+                if (e.target === tradeModal) closeTradeModal();
+            });
+
+            // ────────────────────────────────────────
+            //  DOWNLOAD TRADE DATA MODAL & HANDLER
+            // ────────────────────────────────────────
+            const btnOpenTradeModal = document.getElementById('btn-open-trade-data-modal');
+            const tradeModal = document.getElementById('trade-data-modal');
+            const btnCloseTradeModal = document.getElementById('btn-close-trade-modal');
+            const btnCancelTradeModal = document.getElementById('btn-cancel-trade-modal');
+            const btnLoadFromHost = document.getElementById('btn-load-from-host');
+            const tradeDatepicker = document.getElementById('trade-data-datepicker');
+            const tradeModalStatus = document.getElementById('trade-modal-status');
+
+            if (btnOpenTradeModal && tradeModal) {
+                btnOpenTradeModal.addEventListener('click', () => {
+                    if (tradeDatepicker && !tradeDatepicker.value) {
+                        const today = new Date();
+                        const yyyy = today.getFullYear();
+                        const mm = String(today.getMonth() + 1).padStart(2, '0');
+                        const dd = String(today.getDate()).padStart(2, '0');
+                        tradeDatepicker.value = `${yyyy}-${mm}-${dd}`;
+                    }
+                    if (tradeModalStatus) {
+                        tradeModalStatus.style.display = 'none';
+                        tradeModalStatus.textContent = '';
+                    }
+                    tradeModal.style.display = 'flex';
+                });
+            }
+
+            function closeTradeModal() {
+                if (tradeModal) tradeModal.style.display = 'none';
+            }
+
+            if (btnCloseTradeModal) btnCloseTradeModal.addEventListener('click', closeTradeModal);
+            if (btnCancelTradeModal) btnCancelTradeModal.addEventListener('click', closeTradeModal);
+
+            if (tradeDatepicker) {
+                tradeDatepicker.addEventListener('change', () => {
+                    const newDate = tradeDatepicker.value;
+                    if (!newDate) return;
+
+                    const startInput = document.getElementById('tickStart');
+                    const endInput = document.getElementById('tickEnd');
+
+                    if (startInput) {
+                        const currentVal = startInput.value;
+                        const timePart = currentVal && currentVal.includes('T') ? currentVal.split('T')[1] : '00:00';
+                        startInput.value = `${newDate}T${timePart}`;
+                    }
+                    if (endInput) {
+                        const currentVal = endInput.value;
+                        const timePart = currentVal && currentVal.includes('T') ? currentVal.split('T')[1] : '23:59';
+                        endInput.value = `${newDate}T${timePart}`;
+                    }
+                });
+            }
+
+            if (btnLoadFromHost) {
+                btnLoadFromHost.addEventListener('click', async () => {
+                    const selectedDate = tradeDatepicker ? tradeDatepicker.value : '';
+                    if (!selectedDate) {
+                        alert('กรุณาเลือกวันที่ต้องการดึงข้อมูล');
+                        return;
+                    }
+
+                    if (tradeModalStatus) {
+                        tradeModalStatus.style.display = 'block';
+                        tradeModalStatus.style.background = 'rgba(56, 189, 248, 0.1)';
+                        tradeModalStatus.style.border = '1px solid rgba(56, 189, 248, 0.3)';
+                        tradeModalStatus.style.color = '#38bdf8';
+                        tradeModalStatus.innerHTML = `⏳ กำลังดึงข้อมูลจาก Host (https://pkderiv.online/api/export_trade_data?startdatetime=${selectedDate})...`;
+                    }
+
+                    btnLoadFromHost.disabled = true;
+
+                    try {
+                        const result = await window.getHistoryTradeFromHost(selectedDate);
+
+                        if (result && result.success) {
+                            const textareaTab2 = document.getElementById('textarea-tab-2');
+                            if (textareaTab2) {
+                                textareaTab2.value = JSON.stringify(result, null, 2);
+                                if (typeof renderTab3FromTab2Data === 'function') {
+                                    renderTab3FromTab2Data();
+                                }
+                            }
+
+                            // Switch active tab to tab-2
+                            const tab2Btn = document.querySelector('.tab-btn[data-tab="tab-2"]');
+                            if (tab2Btn) tab2Btn.click();
+
+                            if (tradeModalStatus) {
+                                tradeModalStatus.style.background = 'rgba(52, 211, 153, 0.1)';
+                                tradeModalStatus.style.border = '1px solid rgba(52, 211, 153, 0.3)';
+                                tradeModalStatus.style.color = '#34d399';
+                                tradeModalStatus.innerHTML = `✅ โหลดและแตกไฟล์ ZIP สำเร็จ (${result.assetCount} สินทรัพย์)! แสดงผลใน Tab 2 เรียบร้อยแล้ว`;
+                            }
+
+                            setTimeout(() => {
+                                closeTradeModal();
+                            }, 1200);
+                        } else {
+                            throw new Error((result && result.error) || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
+                        }
+                    } catch (err) {
+                        console.error('[TradeData] Load from host error:', err);
+                        if (tradeModalStatus) {
+                            tradeModalStatus.style.background = 'rgba(248, 113, 113, 0.1)';
+                            tradeModalStatus.style.border = '1px solid rgba(248, 113, 113, 0.3)';
+                            tradeModalStatus.style.color = '#f87171';
+                            tradeModalStatus.innerHTML = `❌ เกิดข้อผิดพลาด: ${err.message}`;
+                        }
+                    } finally {
+                        btnLoadFromHost.disabled = false;
+                    }
+                });
+            }
+
+            // ────────────────────────────────────────
+            //  DERIV API INITIALIZATION (derivClass_V2.js)
+            // ────────────────────────────────────────
+            const symbolSelectEl = document.getElementById('candleSymbolSelect');
+
+            const derivEls = {
+                lookupAppId: document.createElement('input'),
+                lookupToken: document.createElement('input'),
+                listAccountsBtn: document.createElement('button'),
+                appId: document.getElementById('appId'),
+                accountId: document.getElementById('accountId'),
+                token: document.getElementById('token'),
+                connectBtn: document.getElementById('connectBtn'),
+                disconnectBtn: document.getElementById('disconnectBtn'),
+                clearLogBtn: document.createElement('button'),
+                statusDot: document.getElementById('statusDot'),
+                accountPanel: document.getElementById('accountPanel'),
+                accLoginid: document.getElementById('accLoginid'),
+                accWsStatus: document.getElementById('accWsStatus'),
+                connectionType: document.getElementById('connectionType'),
+                log: document.createElement('div'),
+
+                symbol: symbolSelectEl,
+                candleSymbolSelect: symbolSelectEl,
+
+                durationUnit: document.createElement('input'),
+                duration: document.createElement('input'),
+                stake: document.createElement('input'),
+                proposalCallBtn: document.createElement('button'),
+                proposalPutBtn: document.createElement('button'),
+                proposalResult: document.createElement('div'),
+                propId: document.createElement('div'),
+                propPrice: document.createElement('div'),
+                propPayout: document.createElement('div'),
+                buyBtn: document.createElement('button'),
+
+                rawRequest: document.createElement('textarea'),
+                sendRawBtn: document.createElement('button'),
+
+                historyDateFrom: document.createElement('input'),
+                historyDateTo: document.createElement('input'),
+                historyLimit: document.createElement('input'),
+                fetchHistoryBtn: document.createElement('button'),
+                historyTableContainer: document.createElement('div'),
+                historyTableBody: document.createElement('tbody'),
+
+                tickSymbol: document.createElement('div'),
+                tickQuote: document.createElement('div'),
+                tickEpoch: null,
+                tickPip: null,
+            };
+
+            const derivApp = new DerivAppVerNewAuth(derivEls);
+
+            // ────────────────────────────────────────
+            //  WAITING SCREEN & ASSET HEADER UTILS
+            // ────────────────────────────────────────
+            function showChartLoading(statusMessage, subMessage) {
+                const overlay = document.getElementById('chart-loading-overlay');
+                const statusText = document.getElementById('loading-status-text');
+                const subText = document.getElementById('loading-sub-text');
+                if (statusText) statusText.textContent = statusMessage;
+                if (subText) subText.textContent = subMessage || 'กรุณารอสักครู่...';
+                if (overlay) overlay.style.display = 'flex';
+            }
+
+            function hideChartLoading() {
+                const overlay = document.getElementById('chart-loading-overlay');
+                if (overlay) overlay.style.display = 'none';
+            }
+
+            function updateChartAssetBadge(symbol) {
+                const badge = document.getElementById('chart-asset-badge');
+                if (!badge) return;
+                let displayName = symbol;
+                if (symbolSelectEl) {
+                    const opt = Array.from(symbolSelectEl.options).find(o => o.value === symbol);
+                    if (opt && opt.textContent) {
+                        displayName = opt.textContent;
+                    }
+                }
+                badge.textContent = `— ${displayName}`;
+            }
+
+            // Intercept WebSocket connection to listen for candle history responses
+            const originalEstablishConnection = derivApp.establishConnection.bind(derivApp);
+            derivApp.establishConnection = function (wsUrl, accountName, isAuthenticated) {
+                originalEstablishConnection(wsUrl, accountName, isAuthenticated);
+                if (this.ws) {
+                    this.ws.addEventListener('message', (event) => {
+                        let data;
+                        try { data = JSON.parse(event.data); } catch (e) { return; }
+                        if (data.error) {
+                            hideChartLoading();
+                            return;
+                        }
+
+                        if (data.msg_type === 'candles' && Array.isArray(data.candles)) {
+                            onCandlesReceived(data.candles, data.echo_req);
+                        }
+                    });
+                }
+            };
+
+            function onCandlesReceived(candles, echoReq) {
+                if (!Array.isArray(candles) || candles.length === 0) {
+                    hideChartLoading();
+                    return;
+                }
+
+                showChartLoading('กำลังคำนวณและวาดกราฟ...', 'ประมวลผลอินดิเคเตอร์และสัญญาณ SMC');
+
+                // 1. Format candles for DynamicChart
+                const formattedCandles = candles.map(c => ({
+                    time: Number(c.epoch),
+                    open: Number(c.open),
+                    high: Number(c.high),
+                    low: Number(c.low),
+                    close: Number(c.close)
+                })).sort((a, b) => a.time - b.time);
+
+                // 2. Load candles onto DynamicChart
+                if (window.dynamicChart) {
+                    window.dynamicChart.setCandleData(formattedCandles);
+                }
+
+                // 3. Compute analysis using FullAnalysisEngine
+                const symbol = (echoReq && echoReq.ticks_history) || (symbolSelectEl ? symbolSelectEl.value : 'R_100');
+                const engine = new FullAnalysisEngine();
+                const analysisResults = engine.performAnalysis(candles, null, symbol);
+
+                // 4. Update asset title in Chart Header
+                updateChartAssetBadge(symbol);
+
+                // 5. Save analysis result into textarea id="textarea-full-analysis"
+                const analysisTextarea = document.getElementById('textarea-full-analysis');
+                if (analysisTextarea) {
+                    analysisTextarea.value = JSON.stringify(analysisResults, null, 2);
+                }
+
+                // 6. Hide loading screen
+                setTimeout(hideChartLoading, 350);
+            }
+
+            let pendingRequests = [];
+
+            function ensureConnected(actionCallback, symbolText) {
+                const isConnected = derivApp.ws && derivApp.ws.readyState === WebSocket.OPEN;
+
+                if (isConnected) {
+                    showChartLoading(`กำลังขอข้อมูล ${symbolText || ''}...`, 'ส่งคำขอรับข้อมูลประวัติจาก Deriv API');
+                    actionCallback();
+                    return;
+                }
+
+                showChartLoading('กำลังเชื่อมต่อ Deriv API...', 'กำลังสร้างการเชื่อมต่อ WebSocket');
+                pendingRequests.push(() => {
+                    showChartLoading(`กำลังขอข้อมูล ${symbolText || ''}...`, 'ส่งคำขอรับข้อมูลประวัติจาก Deriv API');
+                    actionCallback();
+                });
+
+                const statusDot = document.getElementById('statusDot');
+                const isConnecting = statusDot && statusDot.classList.contains('connecting');
+
+                if (!isConnecting) {
+                    derivApp.connect();
+                }
+            }
+
+            const origSetConnectedUI = derivApp.setConnectedUI.bind(derivApp);
+            derivApp.setConnectedUI = function (connected) {
+                origSetConnectedUI(connected);
+                const loadCandleBtn = document.getElementById('loadCandleDataBtn');
+                const loadBtn = document.getElementById('loadTickDataBtn');
+                const stopBtn = document.getElementById('stopLiveBtn');
+                if (loadCandleBtn) loadCandleBtn.disabled = false;
+                if (loadBtn) loadBtn.disabled = false;
+                if (stopBtn && !connected) stopBtn.disabled = true;
+
+                if (connected && pendingRequests.length > 0) {
+                    const reqs = pendingRequests.slice();
+                    pendingRequests = [];
+                    reqs.forEach(fn => {
+                        try { fn(); } catch (err) { console.error('[DerivApp] Error executing pending request:', err); }
+                    });
+                }
+            };
+
+            // Set default datetime range
+            function pad(n) { return String(n).padStart(2, '0'); }
+            function localDateTimeValue(d) {
+                return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            }
+
+            const startEl = document.getElementById('tickStart');
+            const endEl = document.getElementById('tickEnd');
+            if (startEl && endEl) {
+                startEl.step = '1';
+                endEl.step = '1';
+                const now = new Date();
+                const startDefault = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 5, 0);
+                const endDefault = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 55, 0);
+                startEl.value = localDateTimeValue(startDefault);
+                endEl.value = localDateTimeValue(endDefault);
+            }
+
+            // Load Candle Data handler
+            const loadCandleDataBtn = document.getElementById('loadCandleDataBtn');
+            const loadTickDataBtn = document.getElementById('loadTickDataBtn');
+            const stopLiveBtn = document.getElementById('stopLiveBtn');
+
+            if (loadCandleDataBtn) {
+                loadCandleDataBtn.addEventListener('click', () => {
+                    const symbol = symbolSelectEl ? symbolSelectEl.value : 'R_100';
+                    const granularity = document.getElementById('candleGranularitySelect')
+                        ? Number(document.getElementById('candleGranularitySelect').value)
+                        : 60;
+                    const action = () => {
+                        const start = startEl ? startEl.value || null : null;
+                        const end = endEl ? endEl.value || null : null;
+                        const count = Number(document.getElementById('tickCount').value) || 100;
+                        derivApp.fetchCandleHistory(symbol, granularity, start, end, count);
+                    };
+                    ensureConnected(action, symbol);
+                });
+            }
+
+            if (loadTickDataBtn) {
+                loadTickDataBtn.addEventListener('click', () => {
+                    const symbol = symbolSelectEl ? symbolSelectEl.value : 'R_100';
+                    const action = () => {
+                        const start = startEl ? startEl.value || null : null;
+                        const end = endEl ? endEl.value || null : null;
+                        const count = Number(document.getElementById('tickCount').value) || 500;
+                        const subscribe = document.getElementById('tickSubscribeLive').checked ? 1 : 0;
+
+                        derivApp.fetchTickHistory(symbol, start, end, count, subscribe);
+                        if (subscribe && stopLiveBtn) stopLiveBtn.disabled = false;
+                    };
+                    ensureConnected(action, symbol);
+                });
+            }
+
+            if (stopLiveBtn) {
+                stopLiveBtn.addEventListener('click', () => {
+                    derivApp.subscribeTicks(null, 0);
+                    stopLiveBtn.disabled = true;
+                });
+            }
+
+            // ────────────────────────────────────────
+            //  TOGGLE LEFT SIDEBAR (COLLAPSE / EXPAND)
+            // ────────────────────────────────────────
+            const btnToggleLeftSidebar = document.getElementById('btn-toggle-left-sidebar');
+            const appLayout = document.querySelector('.app-layout');
+
+            if (btnToggleLeftSidebar && appLayout) {
+                btnToggleLeftSidebar.addEventListener('click', () => {
+                    const isCollapsed = appLayout.classList.toggle('left-collapsed');
+                    btnToggleLeftSidebar.textContent = isCollapsed ? '▶' : '◀';
+                    btnToggleLeftSidebar.setAttribute('data-tooltip', isCollapsed ? 'Expand Left Panel' : 'Collapse Left Panel');
+
+                    if (window.dynamicChart) window.dynamicChart.resize();
+                    setTimeout(() => {
+                        if (window.dynamicChart) window.dynamicChart.resize();
+                    }, 300);
+                });
+            }
+
+            // ────────────────────────────────────────
+            //  TOGGLE RIGHT SIDEBAR (COLLAPSE / EXPAND)
+            // ────────────────────────────────────────
+            const btnToggleRightSidebar = document.getElementById('btn-toggle-right-sidebar');
+
+            if (btnToggleRightSidebar && appLayout) {
+                btnToggleRightSidebar.addEventListener('click', () => {
+                    const isExpanded = appLayout.classList.toggle('right-expanded');
+                    btnToggleRightSidebar.textContent = isExpanded ? '▶' : '◀';
+                    btnToggleRightSidebar.setAttribute('data-tooltip', isExpanded ? 'Collapse Right Panel' : 'Expand Right Panel');
+
+                    if (window.dynamicChart) window.dynamicChart.resize();
+                    setTimeout(() => {
+                        if (window.dynamicChart) window.dynamicChart.resize();
+                    }, 300);
+                });
+            }
+
+            // ────────────────────────────────────────
+            //  UNDER-CHART TABS LOGIC & FULL ANALYSIS POPULATION
+            // ────────────────────────────────────────
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContentPanels = document.querySelectorAll('.tab-content-panel');
+
+            // ────────────────────────────────────────
+            //  TAB 3: ASSET BUTTONS & HTML TABLE RENDERER FROM TAB 2
+            // ────────────────────────────────────────
+            let currentTab3SelectedAsset = null;
+
+            function renderTab3FromTab2Data(selectedAssetCode = null) {
+                const textareaTab2 = document.getElementById('textarea-tab-2');
+                const assetBtnsContainer = document.getElementById('tab3-asset-buttons');
+                const tableContainer = document.getElementById('tab3-table-container');
+                const summaryInfo = document.getElementById('tab3-summary-info');
+
+                if (!textareaTab2 || !assetBtnsContainer || !tableContainer) return;
+
+                let parsedData = null;
+                try {
+                    const text = textareaTab2.value.trim();
+                    if (text) {
+                        parsedData = JSON.parse(text);
+                    }
+                } catch (e) {
+                    tableContainer.innerHTML = `<div style="padding:20px; text-align:center; color:var(--accent-red); font-size:12px;">⚠️ ไม่สามารถอ่านข้อมูล JSON ใน Tab 2 ได้: ${e.message}</div>`;
+                    assetBtnsContainer.innerHTML = `<span style="font-size:12px; color:var(--accent-red);">(รูปแบบ JSON ใน Tab 2 ไม่ถูกต้อง)</span>`;
+                    if (summaryInfo) summaryInfo.style.display = 'none';
+                    return;
+                }
+
+                if (!parsedData || !parsedData.data || typeof parsedData.data !== 'object') {
+                    tableContainer.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-muted); font-size:13px;">📊 ไม่พบโครงสร้างข้อมูล tradeData ใน Tab 2 (กรุณากด "Load From Host" หรือใส่ JSON ที่มีฟิลด์ data)</div>`;
+                    assetBtnsContainer.innerHTML = `<span style="font-size:12px; color:var(--text-muted);">(ไม่มีข้อมูล)</span>`;
+                    if (summaryInfo) summaryInfo.style.display = 'none';
+                    return;
+                }
+
+                const tradeDataMap = parsedData.data; // { "1HZ10V": { trades, trackOrders }, ... }
+                const assetCodes = Object.keys(tradeDataMap);
+
+                if (assetCodes.length === 0) {
+                    tableContainer.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-muted); font-size:13px;">📊 assetCount = 0 (ไม่พบสินทรัพย์)</div>`;
+                    assetBtnsContainer.innerHTML = `<span style="font-size:12px; color:var(--text-muted);">(0 สินทรัพย์)</span>`;
+                    if (summaryInfo) summaryInfo.style.display = 'none';
+                    return;
+                }
+
+                // Default selection
+                if (!selectedAssetCode || !tradeDataMap[selectedAssetCode]) {
+                    selectedAssetCode = currentTab3SelectedAsset && tradeDataMap[currentTab3SelectedAsset]
+                        ? currentTab3SelectedAsset
+                        : assetCodes[0];
+                }
+                currentTab3SelectedAsset = selectedAssetCode;
+
+                // Build Asset Buttons
+                let btnsHTML = `<span style="font-size:12px; color:var(--text-secondary); font-weight:600; margin-right:4px;">Assets (${parsedData.assetCount || assetCodes.length}):</span>`;
+
+                assetCodes.forEach(code => {
+                    const assetObj = tradeDataMap[code];
+                    const tradeCount = (assetObj && assetObj.trades && Array.isArray(assetObj.trades)) ? assetObj.trades.length : 0;
+                    const isActive = code === selectedAssetCode;
+                    btnsHTML += `
+                        <button type="button" class="asset-badge-btn ${isActive ? 'active' : ''}" data-asset-code="${code}">
+                            ${code} (${tradeCount})
+                        </button>
+                    `;
+                });
+
+                assetBtnsContainer.innerHTML = btnsHTML;
+
+                // Attach click handlers to asset buttons
+                const buttons = assetBtnsContainer.querySelectorAll('.asset-badge-btn');
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const code = btn.getAttribute('data-asset-code');
+                        renderTab3FromTab2Data(code);
+                    });
+                });
+
+                // Render Table for target asset
+                const targetAssetData = tradeDataMap[selectedAssetCode];
+                if (!targetAssetData) {
+                    tableContainer.innerHTML = `<div style="padding:30px; text-align:center; color:var(--text-muted);">ไม่พบข้อมูลของสินทรัพย์ ${selectedAssetCode}</div>`;
+                    return;
+                }
+
+                const trades = targetAssetData.trades || [];
+                const trackOrders = targetAssetData.trackOrders || [];
+
+                if (summaryInfo) {
+                    summaryInfo.style.display = 'block';
+                    summaryInfo.innerHTML = `
+                        <span>สินทรัพย์: <b style="color:var(--accent-teal);">${selectedAssetCode}</b></span> &nbsp;|&nbsp; 
+                        <span>วันที่: <b style="color:var(--text-primary);">${parsedData.date || '-'}</b></span> &nbsp;|&nbsp; 
+                        <span>Trades ทั้งหมด: <b style="color:var(--accent-blue);">${trades.length}</b> รายการ</span> &nbsp;|&nbsp; 
+                        <span>Track Orders: <b style="color:var(--accent-purple);">${trackOrders.length}</b> รายการ</span>
+                    `;
+                }
+
+                if (trades.length === 0 && trackOrders.length === 0) {
+                    tableContainer.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-muted);">ไม่พบข้อมูลรายการ Trades หรือ Track Orders สำหรับสินทรัพย์ ${selectedAssetCode}</div>`;
+                    return;
+                }
+
+                let recordsToRender = trades.length > 0 ? trades : trackOrders;
+
+                if (!Array.isArray(recordsToRender) || recordsToRender.length === 0) {
+                    tableContainer.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-muted);">ไม่มีรายการสำหรับแสดงในตาราง</div>`;
+                    return;
+                }
+
+                // Generate HTML Table with user-specified fields
+                const targetFields = [
+                    "contractId",
+                    "dateStart",
+                    "ema_periods",
+                    "entryConditions",
+                    "tradeCode",
+                    "entrySpot",
+                    "exitSpot",
+                    "maxProfit",
+                    "minProfit",
+                    "purchaseTimeDisplay",
+                    "sellTimeDisplay",
+                    "thisAction",
+                    "WinStatus",
+                    "ThisProfit"
+                ];
+
+                function getRowValue(row, fieldName) {
+                    if (!row) return '-';
+                    if (row.hasOwnProperty(fieldName)) return row[fieldName];
+                    const lower = fieldName.toLowerCase();
+                    for (const k of Object.keys(row)) {
+                        if (k.toLowerCase() === lower) {
+                            return row[k];
+                        }
+                    }
+                    return '-';
+                }
+
+                let tableHTML = `<table class="trade-data-table"><thead><tr>`;
+                targetFields.forEach(field => {
+                    tableHTML += `<th>${field}</th>`;
+                });
+                tableHTML += `</tr></thead><tbody>`;
+
+                recordsToRender.forEach(row => {
+                    tableHTML += `<tr>`;
+                    targetFields.forEach(field => {
+                        let val = getRowValue(row, field);
+                        let cellClass = '';
+
+                        if (val === null || val === undefined) {
+                            val = '-';
+                        } else if (typeof val === 'object') {
+                            val = JSON.stringify(val);
+                        }
+
+                        // Profit styling for profit fields
+                        if (field.toLowerCase().includes('profit')) {
+                            const num = parseFloat(val);
+                            if (!isNaN(num)) {
+                                cellClass = num >= 0 ? 'profit-pos' : 'profit-neg';
+                                val = (num >= 0 ? '+' : '') + num.toFixed(2);
+                            }
+                        }
+
+                        tableHTML += `<td class="${cellClass}">${val}</td>`;
+                    });
+                    tableHTML += `</tr>`;
+                });
+
+                tableHTML += `</tbody></table>`;
+                tableContainer.innerHTML = tableHTML;
+            }
+
+            const btnParseTab2 = document.getElementById('btn-parse-tab2');
+            if (btnParseTab2) {
+                btnParseTab2.addEventListener('click', () => {
+                    renderTab3FromTab2Data();
+                });
+            }
+
+            // ────────────────────────────────────────
+            //  Trade markers drawing and clearing are now managed by clsDrawMarker instances
+            // ────────────────────────────────────────
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetTabId = btn.getAttribute('data-tab');
+
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabContentPanels.forEach(p => p.classList.remove('active'));
+
+                    btn.classList.add('active');
+                    const targetPanel = document.getElementById(targetTabId);
+                    if (targetPanel) targetPanel.classList.add('active');
+
+                    if (targetTabId === 'tab-3') {
+                        renderTab3FromTab2Data();
+                    }
+                });
+            });
+
+            function updateFullAnalysisTextarea() {
+                const analysisTextarea = document.getElementById('textarea-full-analysis');
+                if (analysisTextarea && window.dynamicChart) {
+                    const analysisData = window.dynamicChart.getFullAnalysisData();
+                    analysisTextarea.value = JSON.stringify(analysisData, null, 2);
+                }
+            }
+
+            // Auto populate full analysis data on initial load
+            setTimeout(updateFullAnalysisTextarea, 500);
+
+            // Update full analysis data when config or candle data changes
+            const origLoadConfig = chart.loadConfig.bind(chart);
+            chart.loadConfig = function (cfg) {
+                origLoadConfig(cfg);
+                setTimeout(updateFullAnalysisTextarea, 200);
+            };
+
+            const origSetCandleData = chart.setCandleData.bind(chart);
+            chart.setCandleData = function (data) {
+                origSetCandleData(data);
+                setTimeout(updateFullAnalysisTextarea, 200);
+            };
+
+            // ────────────────────────────────────────
+            //  CHART CLICK TO TRADE TABLE HIGHLIGHT
+            // ────────────────────────────────────────
+            function parseDateTextToEpoch(dateStr) {
+                if (!dateStr || dateStr === '-') return 0;
+                // Format: DD/MM/YYYY HH:MM:SS  (Thai Buddhist year or Gregorian)
+                const dmyMatch = dateStr.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/);
+                if (dmyMatch) {
+                    const dd = dmyMatch[1].padStart(2, '0');
+                    const mm = dmyMatch[2].padStart(2, '0');
+                    let yyyy = parseInt(dmyMatch[3], 10);
+                    const hh = dmyMatch[4].padStart(2, '0');
+                    const mi = dmyMatch[5];
+                    const ss = dmyMatch[6];
+                    // Convert Buddhist Era (พ.ศ.) to Gregorian (ค.ศ.)
+                    if (yyyy > 2400) {
+                        yyyy -= 543;
+                    }
+                    // Build Date object using UTC to avoid timezone drift
+                    const d = new Date(yyyy, parseInt(mm, 10) - 1, parseInt(dd, 10), parseInt(hh, 10), parseInt(mi, 10), parseInt(ss, 10));
+                    if (!isNaN(d.getTime())) {
+                        const epoch = Math.floor(d.getTime() / 1000);
+                        console.log('[parseDateTextToEpoch]', dateStr, '→ epoch:', epoch, '→ Date:', d.toISOString());
+                        return epoch;
+                    }
+                }
+                // Fallback: try native Date parsing
+                const d = new Date(dateStr);
+                if (!isNaN(d.getTime())) {
+                    return Math.floor(d.getTime() / 1000);
+                }
+                console.warn('[parseDateTextToEpoch] Failed to parse:', dateStr);
+                return 0;
+            }
+
+            const chartContainer = document.getElementById('chart-container');
+            if (chartContainer) {
+                chartContainer.addEventListener('chart-click', (e) => {
+                    const clickedTime = e.detail.time;
+                    console.log('[Chart Click] Raw event time:', clickedTime, 'type:', typeof clickedTime);
+                    
+                    let clickedDate = null;
+                    if (typeof clickedTime === 'number') {
+                        const ms = clickedTime < 1e12 ? clickedTime * 1000 : clickedTime;
+                        clickedDate = new Date(ms);
+                    } else if (typeof clickedTime === 'string') {
+                        clickedDate = new Date(clickedTime);
+                    } else if (clickedTime && typeof clickedTime === 'object') {
+                        if (clickedTime.year && clickedTime.month && clickedTime.day) {
+                            clickedDate = new Date(clickedTime.year, clickedTime.month - 1, clickedTime.day);
+                        }
+                    }
+
+                    if (!clickedDate || isNaN(clickedDate.getTime())) {
+                        console.warn('[Chart Click] Could not parse clicked time');
+                        return;
+                    }
+
+                    const hours = String(clickedDate.getHours()).padStart(2, '0');
+                    const minutes = String(clickedDate.getMinutes()).padStart(2, '0');
+                    const clickedHm = `${hours}:${minutes}`;
+                    console.log('[Chart Click] clickedDate:', clickedDate.toISOString(), '→ Local HH:MM:', clickedHm);
+
+                    // Switch to Tab 3 if not active
+                    const tab3Btn = document.querySelector('.tab-btn[data-tab="tab-3"]');
+                    if (tab3Btn && !tab3Btn.classList.contains('active')) {
+                        tab3Btn.click();
+                    }
+
+                    // Highlight and scroll after rendering
+                    setTimeout(() => {
+                        const table = document.querySelector('.trade-data-table');
+                        if (!table) {
+                            console.warn('[Chart Click] No .trade-data-table found');
+                            return;
+                        }
+
+                        // Get column indices
+                        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim().toLowerCase());
+                        console.log('[Chart Click] Table headers:', headers);
+                        
+                        const purchaseTimeIdx = headers.indexOf('purchasetimedisplay');
+                        if (purchaseTimeIdx === -1) {
+                            console.warn('[Chart Click] Column purchasetimedisplay not found. Available:', headers.join(', '));
+                            return;
+                        }
+
+                        // Clear previous highlights
+                        table.querySelectorAll('tr.highlighted-row').forEach(r => {
+                            r.classList.remove('highlighted-row');
+                        });
+
+                        let firstMatchedRow = null;
+                        const rows = table.querySelectorAll('tbody tr');
+                        for (const row of rows) {
+                            const cells = row.querySelectorAll('td');
+                            if (cells.length > purchaseTimeIdx) {
+                                const timeCellText = cells[purchaseTimeIdx].textContent.trim();
+                                const match = timeCellText.match(/(\d{1,2}):(\d{2})/);
+                                if (match) {
+                                    const rowH = match[1].padStart(2, '0');
+                                    const rowM = match[2];
+                                    const rowHm = `${rowH}:${rowM}`;
+
+                                    if (rowHm === clickedHm) {
+                                        row.classList.add('highlighted-row');
+                                        if (!firstMatchedRow) {
+                                            firstMatchedRow = row;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        console.log('[Chart Click] firstMatchedRow:', firstMatchedRow ? 'FOUND' : 'NOT FOUND');
+
+                        if (firstMatchedRow) {
+                            const container = document.getElementById('tab3-table-container');
+                            if (container) {
+                                const headerRow = table.querySelector('thead tr');
+                                const headerHeight = headerRow ? headerRow.offsetHeight : 35;
+
+                                const prevRow = firstMatchedRow.previousElementSibling;
+                                if (prevRow) {
+                                    container.scrollTop = prevRow.offsetTop - headerHeight;
+                                } else {
+                                    container.scrollTop = firstMatchedRow.offsetTop - headerHeight;
+                                }
+                            }
+
+                            // Trigger chart trade highlight shading + price lines
+                            const chkDrawHighlight = document.getElementById('chk-draw-highlight');
+                            console.log('[Chart Click] Checkbox checked:', chkDrawHighlight ? chkDrawHighlight.checked : 'NOT FOUND');
+                            
+                            if (chkDrawHighlight && chkDrawHighlight.checked) {
+                                const sellTimeIdx = headers.indexOf('selltimedisplay');
+                                const actionIdx = headers.indexOf('thisaction');
+                                const entrySpotIdx = headers.indexOf('entryspot');
+                                const exitSpotIdx = headers.indexOf('exitspot');
+
+                                console.log('[Chart Click] Column indices: sellTime=', sellTimeIdx, 'action=', actionIdx, 'entry=', entrySpotIdx, 'exit=', exitSpotIdx);
+
+                                if (sellTimeIdx !== -1 && actionIdx !== -1 && entrySpotIdx !== -1 && exitSpotIdx !== -1) {
+                                    const cells = firstMatchedRow.querySelectorAll('td');
+                                    const purchaseText = cells[purchaseTimeIdx].textContent.trim();
+                                    const sellText = cells[sellTimeIdx].textContent.trim();
+                                    const actionText = cells[actionIdx].textContent.trim().toUpperCase();
+                                    const entrySpotVal = parseFloat(cells[entrySpotIdx].textContent.trim());
+                                    const exitSpotVal = parseFloat(cells[exitSpotIdx].textContent.trim());
+
+                                    console.log('[Chart Click] Row data:', { purchaseText, sellText, actionText, entrySpotVal, exitSpotVal });
+
+                                    // Calculate trade duration from table dates
+                                    const parsedStart = parseDateTextToEpoch(purchaseText);
+                                    const parsedEnd = parseDateTextToEpoch(sellText);
+                                    let duration = 300; // default 5 minutes
+                                    if (parsedStart && parsedEnd && parsedEnd > parsedStart) {
+                                        duration = parsedEnd - parsedStart;
+                                    }
+
+                                    // Use the CLICKED CANDLE'S epoch as zone anchor
+                                    // (guarantees the zone is within the chart's visible time range)
+                                    const chartEpoch = (typeof clickedTime === 'number') ? clickedTime : 0;
+                                    const zoneStart = chartEpoch || parsedStart;
+                                    const zoneEnd = zoneStart + duration;
+
+                                    console.log('[Chart Click] chartEpoch:', chartEpoch, 'duration:', duration, 's, zone:', zoneStart, '→', zoneEnd);
+
+                                    if (zoneStart && window.dynamicChart) {
+                                        const isCall = actionText.includes('CALL');
+                                        console.log('[Chart Click] Calling setTradeHighlight, isCall:', isCall);
+                                        window.dynamicChart.setTradeHighlight({
+                                            startTime: zoneStart,
+                                            endTime: zoneEnd,
+                                            isCall: isCall,
+                                            entryPrice: entrySpotVal,
+                                            exitPrice: exitSpotVal
+                                        });
+                                    } else {
+                                        console.warn('[Chart Click] zoneStart is 0 or dynamicChart missing');
+                                    }
+                                } else {
+                                    console.warn('[Chart Click] Required columns missing from table');
+                                }
+                            } else {
+                                if (window.dynamicChart) {
+                                    window.dynamicChart.clearTradeHighlight();
+                                }
+                            }
+                        } else {
+                            console.log('[Chart Click] No matching row found for HH:MM:', clickedHm);
+                            if (window.dynamicChart) {
+                                window.dynamicChart.clearTradeHighlight();
+                            }
+                        }
+                    }, 100);
+                });
+            }
+
+            // Listen to checkbox change event
+            const chkDrawHighlight = document.getElementById('chk-draw-highlight');
+            if (chkDrawHighlight) {
+                chkDrawHighlight.addEventListener('change', () => {
+                    if (!chkDrawHighlight.checked) {
+                        if (window.dynamicChart) {
+                            window.dynamicChart.clearTradeHighlight();
+                        }
+                    } else {
+                        // Re-trigger highlighting using the highlighted-row class if exists
+                        const table = document.querySelector('.trade-data-table');
+                        if (table) {
+                            const activeRow = table.querySelector('tr.highlighted-row');
+                            if (activeRow) {
+                                const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim().toLowerCase());
+                                const purchaseTimeIdx = headers.indexOf('purchasetimedisplay');
+                                const sellTimeIdx = headers.indexOf('selltimedisplay');
+                                const actionIdx = headers.indexOf('thisaction');
+                                const entrySpotIdx = headers.indexOf('entryspot');
+                                const exitSpotIdx = headers.indexOf('exitspot');
+
+                                if (purchaseTimeIdx !== -1 && sellTimeIdx !== -1 && actionIdx !== -1 && entrySpotIdx !== -1 && exitSpotIdx !== -1) {
+                                    const cells = activeRow.querySelectorAll('td');
+                                    const purchaseText = cells[purchaseTimeIdx].textContent.trim();
+                                    const sellText = cells[sellTimeIdx].textContent.trim();
+                                    const actionText = cells[actionIdx].textContent.trim().toUpperCase();
+                                    const entrySpotVal = parseFloat(cells[entrySpotIdx].textContent.trim());
+                                    const exitSpotVal = parseFloat(cells[exitSpotIdx].textContent.trim());
+
+                                    // Calculate duration
+                                    const parsedStart = parseDateTextToEpoch(purchaseText);
+                                    const parsedEnd = parseDateTextToEpoch(sellText);
+                                    let duration = 300;
+                                    if (parsedStart && parsedEnd && parsedEnd > parsedStart) {
+                                        duration = parsedEnd - parsedStart;
+                                    }
+
+                                    // Find matching candle epoch from chart data by HH:MM
+                                    let chartAnchor = parsedStart;
+                                    const hmMatch = purchaseText.match(/(\d{1,2}):(\d{2})/);
+                                    if (hmMatch && window.dynamicChart && window.dynamicChart._candleData) {
+                                        const targetHm = hmMatch[1].padStart(2, '0') + ':' + hmMatch[2];
+                                        const candles = window.dynamicChart._candleData;
+                                        for (let i = candles.length - 1; i >= 0; i--) {
+                                            const ct = candles[i].time;
+                                            const cd = new Date(ct < 1e12 ? ct * 1000 : ct);
+                                            const cdHm = String(cd.getHours()).padStart(2, '0') + ':' + String(cd.getMinutes()).padStart(2, '0');
+                                            if (cdHm === targetHm) {
+                                                chartAnchor = ct;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if (chartAnchor && window.dynamicChart) {
+                                        const isCall = actionText.includes('CALL');
+                                        window.dynamicChart.setTradeHighlight({
+                                            startTime: chartAnchor,
+                                            endTime: chartAnchor + duration,
+                                            isCall: isCall,
+                                            entryPrice: entrySpotVal,
+                                            exitPrice: exitSpotVal
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ────────────────────────────────────────
+            //  EXPOSE TO WINDOW FOR DEBUGGING
+            // ────────────────────────────────────────
+            window.dynamicChart = chart;
+            window.derivApp = derivApp;
+
+            // Instantiate clsDrawMarker for Tab 2
+            window.tab2DrawMarker = new clsDrawMarker({
+                containerId: 'tab2-marker-container',
+                chartId: chart,
+                sourceId: 'textarea-tab-2',
+                options: {
+                    labelText: '📌 Markers (Tab 2 JSON):'
+                }
+            });
+
+            // Instantiate clsDrawMarker for Tab 3 (filtering by active asset)
+            window.tab3DrawMarker = new clsDrawMarker({
+                containerId: 'tab3-marker-container',
+                chartId: chart,
+                sourceId: 'textarea-tab-2',
+                assetFilter: () => currentTab3SelectedAsset,
+                options: {
+                    labelText: ''
+                }
+            });
+
+            // ────────────────────────────────────────
+            //  EMA CROSSOVER MARKERS FROM TEXTAREA-FULL-ANALYSIS
+            // ────────────────────────────────────────
+            function drawEMACrossMarkers(type) {
+                const textarea = document.getElementById('textarea-full-analysis');
+                if (!textarea) return;
+                
+                let analysisData = [];
+                try {
+                    const text = textarea.value.trim();
+                    if (text) {
+                        analysisData = JSON.parse(text);
+                    }
+                } catch (e) {
+                    alert('⚠️ ไม่สามารถอ่านข้อมูล JSON จาก textarea-full-analysis ได้: ' + e.message);
+                    return;
+                }
+                
+                if (!Array.isArray(analysisData) || analysisData.length === 0) {
+                    alert('⚠️ ไม่พบข้อมูลการวิเคราะห์ใน textarea-full-analysis');
+                    return;
+                }
+                
+                const newMarkers = [];
+                
+                analysisData.forEach(item => {
+                    const time = item.candletime;
+                    if (!time) return;
+                    
+                    if (type === 'ema2') {
+                        const cut = item.ema_cut_position; // 'CrossUp' / 'CrossDown' / '-'
+                        if (cut === 'CrossUp') {
+                            newMarkers.push({
+                                time: time,
+                                position: 'belowBar',
+                                color: '#38bdf8', // accent-blue
+                                shape: 'arrowUp',
+                                text: 'EMA Cut Up (2)'
+                            });
+                        } else if (cut === 'CrossDown') {
+                            newMarkers.push({
+                                time: time,
+                                position: 'aboveBar',
+                                color: '#f87171', // accent-red
+                                shape: 'arrowDown',
+                                text: 'EMA Cut Down (2)'
+                            });
+                        }
+                    } else if (type === 'ema3') {
+                        const cutAll = item.ema_cut_all_type; // 'AllCrossUp' / 'AllCrossDown' / '-'
+                        if (cutAll === 'AllCrossUp') {
+                            newMarkers.push({
+                                time: time,
+                                position: 'belowBar',
+                                color: '#2dd4bf', // accent-teal
+                                shape: 'arrowUp',
+                                text: 'EMA Cut Up (3)'
+                            });
+                        } else if (cutAll === 'AllCrossDown') {
+                            newMarkers.push({
+                                time: time,
+                                position: 'aboveBar',
+                                color: '#fbbf24', // accent-amber
+                                shape: 'arrowDown',
+                                text: 'EMA Cut Down (3)'
+                            });
+                        }
+                    }
+                });
+                
+                if (newMarkers.length === 0) {
+                    alert(`⚠️ ไม่พบจุดตัด EMA ในช่วงเวลาข้อมูลนี้`);
+                    return;
+                }
+                
+                if (chart) {
+                    chart.setCustomMarkers(newMarkers, 'ema_cross');
+                    alert(`✅ วาด EMA Crossover Markers สำเร็จ (${newMarkers.length} จุด)`);
+                } else {
+                    alert('⚠️ ไม่พบออบเจ็กต์กราฟ');
+                }
+            }
+
+            const btnEma2 = document.getElementById('btn-draw-ema2-cross');
+            if (btnEma2) {
+                btnEma2.addEventListener('click', () => drawEMACrossMarkers('ema2'));
+            }
+
+            const btnEma3 = document.getElementById('btn-draw-ema3-cross');
+            if (btnEma3) {
+                btnEma3.addEventListener('click', () => drawEMACrossMarkers('ema3'));
+            }
+
+            const btnClearEma = document.getElementById('btn-clear-ema-cross');
+            if (btnClearEma) {
+                btnClearEma.addEventListener('click', () => {
+                    if (chart) {
+                        chart.clearCustomMarkers('ema_cross');
+                        chart.clearCustomMarkers('age_cut_ageCutCandleCode12');
+                        chart.clearCustomMarkers('age_cut_ageCutCandleCode123');
+                        alert('🧹 เคลียร์จุดตัด EMA และ Age Cut ทั้งหมดเรียบร้อยแล้ว!');
+                    }
+                });
+            }
+
+            // ────────────────────────────────────────
+            //  AGE CUT MARKERS FROM TEXTAREA-FULL-ANALYSIS (0-1)
+            // ────────────────────────────────────────
+            function drawAgeCutMarkers(field) {
+                const textarea = document.getElementById('textarea-full-analysis');
+                if (!textarea) return;
+                
+                let analysisData = [];
+                try {
+                    const text = textarea.value.trim();
+                    if (text) {
+                        analysisData = JSON.parse(text);
+                    }
+                } catch (e) {
+                    alert('⚠️ ไม่สามารถอ่านข้อมูล JSON จาก textarea-full-analysis ได้: ' + e.message);
+                    return;
+                }
+                
+                if (!Array.isArray(analysisData) || analysisData.length === 0) {
+                    alert('⚠️ ไม่พบข้อมูลการวิเคราะห์ใน textarea-full-analysis');
+                    return;
+                }
+                
+                const newMarkers = [];
+                
+                analysisData.forEach(item => {
+                    const time = item.candletime;
+                    const code = item[field]; // e.g. "0-CrossUp-Up:Up:Up"
+                    if (!time || !code || typeof code !== 'string') return;
+                    
+                    const parts = code.split('-');
+                    if (parts.length < 2) return;
+                    
+                    const age = parseInt(parts[0], 10);
+                    const direction = parts[1]; // "CrossUp" / "CrossDown"
+                    
+                    if (isNaN(age) || age < 0 || age > 1) return;
+                    
+                    const isUp = direction === 'CrossUp';
+                    const isDown = direction === 'CrossDown';
+                    
+                    if (!isUp && !isDown) return;
+                    
+                    const markerColor = isUp ? '#34d399' : '#f87171';
+                    const markerText = `${field === 'ageCutCandleCode12' ? 'Age12' : 'Age123'} (${age}) ${isUp ? 'Up' : 'Down'}`;
+                    
+                    newMarkers.push({
+                        time: time,
+                        position: isUp ? 'belowBar' : 'aboveBar',
+                        color: markerColor,
+                        shape: isUp ? 'arrowUp' : 'arrowDown',
+                        text: markerText
+                    });
+                });
+                
+                if (newMarkers.length === 0) {
+                    alert(`⚠️ ไม่พบจุดตัดตรงตามเงื่อนไข (Age 0-1) สำหรับ ${field === 'ageCutCandleCode12' ? 'Age 12' : 'Age 123'}`);
+                    return;
+                }
+                
+                if (chart) {
+                    chart.setCustomMarkers(newMarkers, 'age_cut_' + field);
+                    alert(`✅ วาด Age Cut ${field === 'ageCutCandleCode12' ? '12' : '123'} สำเร็จ (${newMarkers.length} จุด)`);
+                } else {
+                    alert('⚠️ ไม่พบออบเจ็กต์กราฟ');
+                }
+            }
+
+            const btnAge12 = document.getElementById('btn-draw-age12-cross');
+            if (btnAge12) {
+                btnAge12.addEventListener('click', () => drawAgeCutMarkers('ageCutCandleCode12'));
+            }
+
+            const btnAge123 = document.getElementById('btn-draw-age123-cross');
+            if (btnAge123) {
+                btnAge123.addEventListener('click', () => drawAgeCutMarkers('ageCutCandleCode123'));
+            }
+        })();
+    </script>
+
+    <script src="https://lovetoshopmall.com/Derivtrade2026/pageSender.js"></script>
+</body>
+
+</html>

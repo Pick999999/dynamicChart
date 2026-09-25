@@ -1,0 +1,90 @@
+[
+  {
+    "groupcode": 1,
+    "groupname": "จัดการ vps",
+    "groupDesc": "กลุ่มตารางสำหรับบริหารจัดการข้อมูลเครื่อง VPS และประวัติค่าบริการ Cloud / AWS EC2",
+    "tablelist": [
+      {
+        "tablename": "vpsmaster",
+        "tableDescription": "ตารางข้อมูลหลักของเครื่อง VPS เช่น VPS Code, ชื่อ, IP (Public/Private), Port, URL และบัญชี Deriv ที่เชื่อมโยง",
+        "getDataFromUrl": "php/api_vps.php"
+      },
+      {
+        "tablename": "vpsbillinghistory",
+        "tableDescription": "ตารางประวัติค่าบริการรายเดือนของ VPS/AWS (Billing Month, ยอดค่าใช้จ่าย, สกุลเงิน, รายละเอียด JSON)",
+        "getDataFromUrl": "php/api_aws_billing.php"
+      }
+    ]
+  },
+  {
+    "groupcode": 2,
+    "groupname": "จัดการ deriv account",
+    "groupDesc": "กลุ่มตารางสำหรับจัดการบัญชีผู้ใช้งาน Deriv API, Token และรายการสินทรัพย์ (Assets) ทั้งหมด",
+    "tablelist": [
+      {
+        "tablename": "derivaccount",
+        "tableDescription": "ตารางข้อมูลบัญชี Deriv, App ID, Token, Token Name, วันหมดอายุ และสถานะการเปิดใช้งาน",
+        "getDataFromUrl": "php/api_deriv_account.php"
+      },
+      {
+        "tablename": "asset",
+        "tableDescription": "ตารางรายการสินทรัพย์/คู่เหรียญทั้งหมดจาก Deriv (Market, Submarket, Pip Size, สถานะเปิด/ปิดตลาด)",
+        "getDataFromUrl": "php/sync_deriv_assets.php"
+      }
+    ]
+  },
+  {
+    "groupcode": 3,
+    "groupname": "สำหรับการวิเคราะห์แท่งเทียน+indicator",
+    "groupDesc": "กลุ่มตารางสำหรับจัดเก็บราคา Tick, แท่งเทียน Candlestick และผลลัพธ์การคำนวณ Indicator ทางเทคนิค",
+    "tablelist": [
+      {
+        "tablename": "full_analysis_data",
+        "tableDescription": "ตารางบันทึกผลการวิเคราะห์แท่งเทียนและ Indicator แบบละเอียด (EMA Short/Med/Long, Gap, Slope, SMC, PK Trend)",
+        "getDataFromUrl": "php/save_full_analysis.php"
+      },
+      {
+        "tablename": "ticks",
+        "tableDescription": "ตารางบันทึกราคา Tick แบบ Realtime ตามช่วงเวลาของแต่ละคู่เหรียญ (Symbol, Time, Price)",
+        "getDataFromUrl": "php/save_market_data.php"
+      },
+      {
+        "tablename": "candles",
+        "tableDescription": "ตารางบันทึกแท่งเทียนราคา OHLC ตาม Timeframe ต่างๆ พร้อม Case Code และ Suggest Action",
+        "getDataFromUrl": "php/save_market_data.php"
+      },
+      {
+        "tablename": "candle_analysis",
+        "tableDescription": "ตารางบันทึกผลสรุปการวิเคราะห์แท่งเทียน (Trend, Trend Score, Strength, Whipsaw, Spike, Analysis JSON)",
+        "getDataFromUrl": "php/save_analysis_data.php"
+      }
+    ]
+  },
+  {
+    "groupcode": 4,
+    "groupname": "สำหรับวิเคราะห์ ผลการเทรด",
+    "groupDesc": "กลุ่มตารางสำหรับบันทึกผลและประวัติการเทรดของ Bot จาก VPS และข้อมูลคำสั่งซื้อขายจริงจาก Deriv",
+    "tablelist": [
+      {
+        "tablename": "vpstradedata",
+        "tableDescription": "ตารางบันทึกข้อมูลการเทรดแต่ละไม้ของ Bot บนแต่ละ VPS (Entry/Exit Spot, Profit, Win/Loss, กลยุทธ์, รอบการเทรด)",
+        "getDataFromUrl": "php/save_gcp_trades.php"
+      },
+      {
+        "tablename": "derivtradehistory",
+        "tableDescription": "ตารางประวัติการเทรดและธุรกรรมจริงที่ดึงจาก Deriv API (Contract ID, Transaction ID, Purchase/Sell Time, Profit/Payout)",
+        "getDataFromUrl": "php/save_trade_history.php"
+      },
+      {
+        "tablename": "tradehead",
+        "tableDescription": "ตารางข้อมูลส่วนหัวของรอบการเทรด (Trade Round) สรุปกลยุทธ์, เวลาเริ่ม-หยุด, จำนวนสินทรัพย์, Max Win/Loss Con",
+        "getDataFromUrl": "php/save_trade_rounds.php"
+      },
+      {
+        "tablename": "trade_history",
+        "tableDescription": "ตารางประวัติการเทรดมาตรฐานสำหรับเชื่อมโยงและวิเคราะห์ข้อมูลย้อนหลัง (Backward Compatibility)",
+        "getDataFromUrl": "php/save_trade_history.php"
+      }
+    ]
+  }
+]

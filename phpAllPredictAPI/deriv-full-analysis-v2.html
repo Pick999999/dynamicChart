@@ -1,0 +1,2283 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deriv Full Analysis - AI Trading Analysis</title>
+
+    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        /* ===== THEME VARIABLES ===== */
+        [data-theme="light"] {
+            --bg-body: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-container: #ffffff;
+            --bg-header: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-status: #f8f9fa;
+            --bg-tabs: #f8f9fa;
+            --bg-tab-active: #ffffff;
+            --bg-card: #f8f9fa;
+            --bg-input: #ffffff;
+            --bg-bar: #e9ecef;
+            --bg-marker-controls: #f8f9fa;
+            --bg-error: #f8d7da;
+            --bg-max-loss-card: #ffffff;
+
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --text-header: #ffffff;
+            --text-tab: #666666;
+            --text-tab-active: #667eea;
+            --text-error: #721c24;
+            --text-loading: #333333;
+
+            --border-status: #dee2e6;
+            --border-tab: #667eea;
+            --border-input: #dddddd;
+            --border-td: #e0e0e0;
+            --border-td-light: #f0f0f0;
+
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --shadow-container: 0 10px 40px rgba(0, 0, 0, 0.3);
+            --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+            --chart-bg: #ffffff;
+            --chart-text: #333333;
+            --chart-grid: #f0f0f0;
+
+            --col-claude-bg: #fff5f5;
+            --col-chatgpt-bg: #f4fce3;
+            --col-deepseek-bg: #e7f5ff;
+            --col-nosort-bg: #fff9db;
+            --col-withsort-bg: #f8f0fc;
+
+            --hover-brightness: 0.95;
+            --btn-load-bg: #ff6b6b;
+            --btn-load-hover: #ff5252;
+            --btn-load-text: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #0a0c0f;
+            --bg-container: #111419;
+            --bg-header: linear-gradient(135deg, #111419 0%, #181c23 100%);
+            --bg-status: #181c23;
+            --bg-tabs: #181c23;
+            --bg-tab-active: #111419;
+            --bg-card: #181c23;
+            --bg-input: #181c23;
+            --bg-bar: #222733;
+            --bg-marker-controls: #181c23;
+            --bg-error: #2a1419;
+            --bg-max-loss-card: #181c23;
+
+            --text-primary: #e8eaf0;
+            --text-secondary: #8a8fa0;
+            --text-muted: #4a5168;
+            --text-header: #ffffff;
+            --text-tab: #4a5168;
+            --text-tab-active: #00ff88;
+            --text-error: #ff3c6e;
+            --text-loading: #00ff88;
+
+            --border-status: #222733;
+            --border-tab: #00ff88;
+            --border-input: #222733;
+            --border-td: #222733;
+            --border-td-light: #1a1e26;
+
+            --accent-primary: #00ff88;
+            --accent-secondary: #00cc6a;
+            --shadow-container: 0 10px 40px rgba(0, 0, 0, 0.8);
+            --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.4);
+
+            --chart-bg: #111419;
+            --chart-text: #e8eaf0;
+            --chart-grid: #222733;
+
+            --col-claude-bg: #1a1214;
+            --col-chatgpt-bg: #121a14;
+            --col-deepseek-bg: #12141a;
+            --col-nosort-bg: #1a1a12;
+            --col-withsort-bg: #1a121a;
+
+            --hover-brightness: 1.2;
+            --btn-load-bg: #00ff88;
+            --btn-load-hover: #00cc6a;
+            --btn-load-text: #000000;
+        }
+
+        [data-theme="blue"] {
+            --bg-body: linear-gradient(135deg, #0c2340 0%, #1a3a5c 50%, #0a4d8c 100%);
+            --bg-container: #0d2137;
+            --bg-header: linear-gradient(135deg, #0a4d8c 0%, #1565c0 100%);
+            --bg-status: #0d2f4f;
+            --bg-tabs: #0d2f4f;
+            --bg-tab-active: #0d2137;
+            --bg-card: #0d2f4f;
+            --bg-input: #1565c0;
+            --bg-bar: #183d5d;
+            --bg-marker-controls: #0d2f4f;
+            --bg-error: #3a1c2e;
+            --bg-max-loss-card: #0d2f4f;
+
+            --text-primary: #cce5ff;
+            --text-secondary: #90c4f0;
+            --text-muted: #5a9bd4;
+            --text-header: #ffffff;
+            --text-tab: #90c4f0;
+            --text-tab-active: #64b5f6;
+            --text-error: #ff8a8a;
+            --text-loading: #cce5ff;
+
+            --border-status: #183d5d;
+            --border-tab: #42a5f5;
+            --border-input: #183d5d;
+            --border-td: #183d5d;
+            --border-td-light: #122a44;
+
+            --accent-primary: #42a5f5;
+            --accent-secondary: #1e88e5;
+            --shadow-container: 0 10px 40px rgba(0, 0, 0, 0.5);
+            --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.3);
+
+            --chart-bg: #0d2137;
+            --chart-text: #cce5ff;
+            --chart-grid: #183d5d;
+
+            --col-claude-bg: #2a1a22;
+            --col-chatgpt-bg: #152a1f;
+            --col-deepseek-bg: #0d2137;
+            --col-nosort-bg: #2a2a15;
+            --col-withsort-bg: #221a2a;
+
+            --hover-brightness: 1.15;
+            --btn-load-bg: #e74c3c;
+            --btn-load-hover: #c0392b;
+            --btn-load-text: #ffffff;
+        }
+
+        /* ===== BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-body);
+            padding: 20px;
+            min-height: 100vh;
+            color: var(--text-primary);
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: var(--bg-container);
+            border-radius: 15px;
+            box-shadow: var(--shadow-container);
+            overflow: hidden;
+            transition: background 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .header {
+            background: var(--bg-header);
+            color: var(--text-header);
+            padding: 20px 30px;
+            transition: background 0.4s ease;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 0;
+        }
+
+        /* Theme Switcher */
+        .theme-switcher {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 4px;
+        }
+
+        .theme-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s ease;
+            margin: 0;
+        }
+
+        .theme-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .theme-btn.active {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transform: none;
+        }
+
+        .theme-btn .theme-icon {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .doc-header-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+            color: #000000 !important;
+            text-decoration: none;
+            padding: 7px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        [data-theme="light"] .doc-header-btn {
+            background: #ffffff;
+            color: #667eea !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="blue"] .doc-header-btn {
+            background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+            color: #ffffff !important;
+        }
+
+        .doc-header-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+            filter: brightness(1.1);
+        }
+
+        .open-window-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .open-window-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            filter: brightness(1.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        select,
+        button,
+        input[type="datetime-local"] {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        select,
+        input[type="datetime-local"] {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border-input);
+        }
+
+        input[type="datetime-local"] {
+            width: 200px;
+        }
+
+        button {
+            background: var(--btn-load-bg);
+            color: var(--btn-load-text);
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: var(--btn-load-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px 30px;
+            background: var(--bg-status);
+            border-bottom: 1px solid var(--border-status);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            transition: background 0.4s ease;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dc3545;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #28a745;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .info {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            display: flex;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-weight: bold;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: var(--bg-tabs);
+            border-bottom: 3px solid var(--border-tab);
+            transition: background 0.4s ease;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: var(--bg-tabs);
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-tab);
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: var(--bg-tab-active);
+            color: var(--text-tab-active);
+            border-bottom: 3px solid var(--border-tab);
+            margin-bottom: -3px;
+        }
+
+        .tab:hover:not(.active) {
+            background: var(--bg-card);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Chart Tab */
+        #chartTab {
+            padding: 20px;
+        }
+
+        #chart {
+            width: 100%;
+            height: 600px;
+        }
+
+        /* Consensus Toggle */
+        .consensus-toggle {
+            text-align: center;
+            padding: 15px;
+            background: var(--bg-status);
+            border-bottom: 2px solid var(--border-status);
+            transition: background 0.4s ease;
+        }
+
+        .consensus-toggle button {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .ai-predictions-panel {
+            display: none;
+            padding: 20px;
+            background: var(--bg-container);
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            transition: background 0.4s ease;
+        }
+
+        .ai-predictions-panel.show {
+            display: grid;
+        }
+
+        .ai-card {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid;
+            transition: background 0.4s ease;
+        }
+
+        .ai-card.claude {
+            border-left-color: #ff6b6b;
+        }
+
+        .ai-card.chatgpt {
+            border-left-color: #10a37f;
+        }
+
+        .ai-card.deepseek {
+            border-left-color: #4ecdc4;
+        }
+
+        .ai-card h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .prediction-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .prediction-value.green {
+            color: #28a745;
+        }
+
+        .prediction-value.red {
+            color: #dc3545;
+        }
+
+        .probability-bars {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .probability-bar {
+            flex: 1;
+        }
+
+        .probability-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+
+        .bar-container {
+            height: 20px;
+            background: var(--bg-bar);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        .bar-fill.green {
+            background: linear-gradient(90deg, #51cf66, #40c057);
+        }
+
+        .bar-fill.red {
+            background: linear-gradient(90deg, #ff6b6b, #fa5252);
+        }
+
+        .consensus-box {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 0 20px 20px 20px;
+        }
+
+        .consensus-value {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        /* Analysis Tab */
+        #analysisTab {
+            padding: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: var(--text-loading);
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .loading-spinner {
+            border: 4px solid var(--bg-bar);
+            border-top: 4px solid var(--accent-primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-msg {
+            display: none;
+            background: var(--bg-error);
+            color: var(--text-error);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        /* Table Styles */
+        /* AI Button Styles */
+        .ai-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
+            border: 2px solid transparent !important;
+            user-select: none;
+        }
+
+        .ai-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            filter: brightness(1.1);
+        }
+
+        .ai-btn.active {
+            box-shadow: 0 0 0 3px #ffffff, 0 0 16px rgba(0, 255, 136, 0.7) !important;
+            transform: translateY(-2px) scale(1.05);
+            border-color: #ffffff !important;
+            filter: brightness(1.15);
+        }
+
+        [data-theme="light"] .ai-btn.active {
+            box-shadow: 0 0 0 3px #1a1a1a, 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+            border-color: #1a1a1a !important;
+        }
+
+        .ai-btn.active::after {
+            content: " ✓";
+            font-weight: 900;
+        }
+
+        .active-marker-banner {
+            display: none;
+            margin-top: 14px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-status);
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            animation: bannerFadeIn 0.3s ease;
+        }
+
+        .active-marker-banner.show {
+            display: flex;
+        }
+
+        @keyframes bannerFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .active-ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Table Styles & Win Rate / Max Loss Summary */
+        .max-loss-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .max-loss-card {
+            background: var(--bg-max-loss-card);
+            padding: 16px 14px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 5px solid;
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s ease;
+        }
+
+        .max-loss-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        }
+
+        .max-loss-card.claude-card {
+            border-left-color: #FF6B6B;
+        }
+
+        .max-loss-card.chatgpt-card {
+            border-left-color: #51CF66;
+        }
+
+        .max-loss-card.deepseek-card {
+            border-left-color: #339AF0;
+        }
+
+        .max-loss-card.nosort-card {
+            border-left-color: #FAB005;
+        }
+
+        .max-loss-card.withsort-card {
+            border-left-color: #AE3EC9;
+        }
+
+        .max-loss-title {
+            font-size: 1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .win-rate-box {
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 8px;
+            padding: 10px 8px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-td-light);
+        }
+
+        [data-theme="dark"] .win-rate-box {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .win-rate-label {
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+        }
+
+        .win-rate-value {
+            font-size: 1.8em;
+            font-weight: 800;
+            line-height: 1.2;
+            margin: 4px 0;
+        }
+
+        .win-rate-sub {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+        }
+
+        .max-loss-section {
+            border-top: 1px dashed var(--border-td-light);
+            padding-top: 10px;
+        }
+
+        .max-loss-value {
+            font-size: 1.7em;
+            font-weight: bold;
+            margin: 3px 0;
+        }
+
+        .max-loss-label {
+            font-size: 0.72em;
+            color: var(--text-secondary);
+        }
+
+        .max-loss-card.claude-card .max-loss-value {
+            color: #FF6B6B;
+        }
+
+        .max-loss-card.chatgpt-card .max-loss-value {
+            color: #51CF66;
+        }
+
+        .max-loss-card.deepseek-card .max-loss-value {
+            color: #339AF0;
+        }
+
+        .max-loss-card.nosort-card .max-loss-value {
+            color: #FAB005;
+        }
+
+        .max-loss-card.withsort-card .max-loss-value {
+            color: #AE3EC9;
+        }
+
+        .analysis-table-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.8em;
+            color: var(--text-primary);
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        thead tr:first-child th {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: white;
+            padding: 12px 8px;
+            font-size: 0.85em;
+            border-right: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        thead tr:nth-child(2) th {
+            padding: 10px 6px;
+            font-size: 0.75em;
+            color: white;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .group-claude {
+            background: linear-gradient(135deg, #FF6B6B 0%, #C92A2A 100%);
+        }
+
+        .group-chatgpt {
+            background: linear-gradient(135deg, #51CF66 0%, #2F9E44 100%);
+        }
+
+        .group-deepseek {
+            background: linear-gradient(135deg, #339AF0 0%, #1864AB 100%);
+        }
+
+        .group-nosort {
+            background: linear-gradient(135deg, #FAB005 0%, #E67700 100%);
+        }
+
+        .group-withsort {
+            background: linear-gradient(135deg, #AE3EC9 0%, #7048E8 100%);
+        }
+
+        .group-info {
+            background: linear-gradient(135deg, #495057 0%, #212529 100%);
+        }
+
+        td {
+            padding: 8px 6px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-td);
+            border-right: 1px solid var(--border-td-light);
+            transition: background 0.4s ease;
+        }
+
+        td.col-claude {
+            background-color: var(--col-claude-bg);
+        }
+
+        td.col-chatgpt {
+            background-color: var(--col-chatgpt-bg);
+        }
+
+        td.col-deepseek {
+            background-color: var(--col-deepseek-bg);
+        }
+
+        td.col-nosort {
+            background-color: var(--col-nosort-bg);
+        }
+
+        td.col-withsort {
+            background-color: var(--col-withsort-bg);
+        }
+
+        tbody tr:hover td {
+            filter: brightness(var(--hover-brightness));
+        }
+
+        .win {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .loss {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .green-result {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .red-result {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div>
+                    <h1>📊 Deriv Full Analysis - AI Predictions</h1>
+                    <h3 style="margin-top: 4px; font-weight: normal; opacity: 0.85; font-size: 13px;">D:\Rust\phpAllPredictAPI\deriv-full-analysis-v2.html</h3>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <a href="aiPredict.html" target="_blank" class="doc-header-btn" title="เปิดอ่านสรุปวิธีคิดของ AI แต่ละตัวในหน้าต่างใหม่">
+                        📖 AI Predict Docs ↗
+                    </a>
+                    <div class="theme-switcher">
+                        <button class="theme-btn" data-theme="light" onclick="setTheme('light')">
+                            <span class="theme-icon">☀️</span> Light
+                        </button>
+                        <button class="theme-btn active" data-theme="dark" onclick="setTheme('dark')">
+                            <span class="theme-icon">🌙</span> Dark
+                        </button>
+                        <button class="theme-btn" data-theme="blue" onclick="setTheme('blue')">
+                            <span class="theme-icon">🌊</span> Blue
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label>👤 Deriv Account</label>
+                    <select id="accountSelect">
+                        <option value="">กำลังโหลดบัญชี...</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Symbol</label>
+                    <select id="assetSelect">
+                        <option value="R_10">Volatility 10 Index</option>
+                        <option value="R_25">Volatility 25 Index</option>
+                        <option value="R_50">Volatility 50 Index</option>
+                        <option value="R_75">Volatility 75 Index</option>
+                        <option value="R_100">Volatility 100 Index</option>
+                        <option value="1HZ10V">Volatility 10 (1s) Index</option>
+                        <option value="1HZ15V">Volatility 15 (1s) Index</option>
+                        <option value="1HZ25V">Volatility 25 (1s) Index</option>
+                        <option value="1HZ30V">Volatility 30 (1s) Index</option>
+                        <option value="1HZ50V">Volatility 50 (1s) Index</option>
+                        <option value="1HZ75V">Volatility 75 (1s) Index</option>
+                        <option value="1HZ90V">Volatility 90 (1s) Index</option>
+                        <option value="1HZ100V">Volatility 100 (1s) Index</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Timeframe</label>
+                    <select id="granularitySelect">
+                        <option value="60" selected>1 Minute</option>
+                        <option value="120">2 Minutes</option>
+                        <option value="180">3 Minutes</option>
+                        <option value="300">5 Minutes</option>
+                        <option value="600">10 Minutes</option>
+                        <option value="900">15 Minutes</option>
+                        <option value="1800">30 Minutes</option>
+                        <option value="3600">1 Hour</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Mode</label>
+                    <select id="modeSelect">
+                        <option value="count">By Count</option>
+                        <option value="date" selected>By Date Range</option>
+                    </select>
+                </div>
+                <div class="control-group" id="countGroup" style="display: none;">
+                    <label>Count</label>
+                    <select id="countSelect">
+                        <option value="50">50 Candles</option>
+                        <option value="100">100 Candles</option>
+                        <option value="200" selected>200 Candles</option>
+                        <option value="500">500 Candles</option>
+                        <option value="1000">1000 Candles</option>
+                    </select>
+                </div>
+                <div class="control-group" id="startDateGroup">
+                    <label>Start Date</label>
+                    <input type="datetime-local" id="startDate" />
+                </div>
+                <div class="control-group" id="endDateGroup">
+                    <label>End Date</label>
+                    <input type="datetime-local" id="endDate" readonly style="opacity: 0.7; cursor: not-allowed;" />
+                </div>
+                <button id="loadBtn">🔄 Load & Analyze</button>
+            </div>
+        </div>
+
+        <div class="status">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+            <div class="info" id="infoBar">
+                <div class="info-item">
+                    <span class="info-label">Account:</span>
+                    <span id="currentAccount">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Symbol:</span>
+                    <span id="currentSymbol">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Timeframe:</span>
+                    <span id="currentTimeframe">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Candles:</span>
+                    <span id="currentCandles">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('chart', event)">📈 Chart</button>
+            <button class="tab" onclick="switchTab('analysis', event)">📊 Analysis Results</button>
+            <button class="tab" onclick="switchTab('guide', event)">📖 AI Predict Guide</button>
+        </div>
+
+        <div id="chartTab" class="tab-content active">
+            <!-- Marker Controls -->
+            <div
+                style="background: var(--bg-marker-controls); padding: 20px; border-bottom: 2px solid var(--border-status); margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px; font-size: 16px;">🎯 Trade Markers</h3>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center;">
+                    <!-- Filter Type -->
+                    <div>
+                        <label style="font-weight: bold; margin-right: 10px;">Show:</label>
+                        <label style="margin-right: 15px;">
+                            <input type="radio" name="markerType" value="win" checked>
+                            <span style="color: #28a745;">✅ Win</span>
+                        </label>
+                        <label style="margin-right: 15px;">
+                            <input type="radio" name="markerType" value="loss">
+                            <span style="color: #dc3545;">❌ Loss</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="markerType" value="both">
+                            <span style="color: #667eea;">📊 Both</span>
+                        </label>
+                    </div>
+
+                    <!-- AI Selection Buttons -->
+                    <div style="flex: 1;">
+                        <label style="font-weight: bold; display: block; margin-bottom: 8px;">Select AI:</label>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="ai-btn" data-ai="claude"
+                                style="background: #FF6B6B; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                                🤖 Claude
+                            </button>
+                            <button class="ai-btn" data-ai="chatgpt"
+                                style="background: #51CF66; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                                💬 ChatGPT
+                            </button>
+                            <button class="ai-btn" data-ai="deepseek"
+                                style="background: #339AF0; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                                🔍 DeepSeek
+                            </button>
+                            <button class="ai-btn" data-ai="nosort"
+                                style="background: #FAB005; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                                📈 NoSort
+                            </button>
+                            <button class="ai-btn" data-ai="withsort"
+                                style="background: #AE3EC9; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                                📊 WithSort
+                            </button>
+                            <button class="ai-btn" data-ai="clear"
+                                style="background: #868e96; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                                🗑️ Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Marker Notice Banner -->
+                <div id="activeMarkerBanner" class="active-marker-banner">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <span style="font-size: 16px;">🎯</span>
+                        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">กำลังแสดง Marker
+                            ของ:</span>
+                        <span id="activeAINameBadge" class="active-ai-badge" style="background: #868e96;">-</span>
+                        <span id="activeAIMarkerStats" style="font-size: 13px; color: var(--text-secondary);"></span>
+                    </div>
+                    <div
+                        style="display: flex; align-items: center; gap: 15px; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap;">
+                        <span><span style="color: #26a69a; font-weight: bold;">▲ เขียว</span>: Win</span>
+                        <span><span style="color: #ef5350; font-weight: bold;">▼ แดง</span>: Loss (&lt;5)</span>
+                        <span><span
+                                style="color: #ffd700; font-weight: bold; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">▼
+                                เหลือง</span>: Loss Con ≥ 5 ⚠️</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chart"></div>
+
+            <div class="consensus-toggle">
+                <button onclick="toggleAIPredictions()">
+                    <span id="toggleIcon">▼</span> Show AI Predictions Panel
+                </button>
+            </div>
+
+            <div class="ai-predictions-panel" id="aiPredictionsPanel">
+                <div class="ai-card claude">
+                    <h3>🤖 Claude</h3>
+                    <div class="prediction-value green" id="claudePrediction">-</div>
+                    <div class="probability-bars">
+                        <div class="probability-bar">
+                            <div class="probability-label">
+                                <span>🟢 Green</span>
+                                <span id="claudeGreenText">-</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill green" id="claudeGreen" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="probability-bar">
+                            <div class="probability-label">
+                                <span>🔴 Red</span>
+                                <span id="claudeRedText">-</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill red" id="claudeRed" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai-card chatgpt">
+                    <h3>💬 ChatGPT</h3>
+                    <div class="prediction-value green" id="chatgptPrediction">-</div>
+                    <div class="probability-bars">
+                        <div class="probability-bar">
+                            <div class="probability-label">
+                                <span>🟢 Green</span>
+                                <span id="chatgptGreenText">-</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill green" id="chatgptGreen" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="probability-bar">
+                            <div class="probability-label">
+                                <span>🔴 Red</span>
+                                <span id="chatgptRedText">-</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill red" id="chatgptRed" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai-card deepseek">
+                    <h3>🔍 DeepSeek</h3>
+                    <div class="prediction-value green" id="deepseekPrediction">-</div>
+                    <div class="probability-bars">
+                        <div class="probability-bar">
+                            <div class="probability-label">
+                                <span>🟢 Green</span>
+                                <span id="deepseekGreenText">-</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill green" id="deepseekGreen" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="probability-bar">
+                            <div class="probability-label">
+                                <span>🔴 Red</span>
+                                <span id="deepseekRedText">-</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill red" id="deepseekRed" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="consensus-box" style="display: none;" id="consensusBox">
+                <h2>🎯 AI Consensus</h2>
+                <div class="consensus-value" id="consensus">-</div>
+                <div class="consensus-detail" id="consensusDetail">-</div>
+            </div>
+        </div>
+
+        <div id="analysisTab" class="tab-content">
+            <div class="loading" id="loadingAnalysis">
+                <div class="loading-spinner"></div>
+                <p>กำลังวิเคราะห์ข้อมูล กรุณารอสักครู่...</p>
+            </div>
+
+            <div class="error-msg" id="errorMsg"></div>
+
+            <div id="analysisResults" style="display: none;">
+                <!-- Max Loss Summary -->
+                <div class="max-loss-summary" id="maxLossSummary"></div>
+
+                <!-- Analysis Table -->
+                <div class="analysis-table-container">
+                    <table id="analysisTable">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="group-info">Trade #</th>
+                                <th rowspan="2" class="group-info">Time (ไทย)</th>
+                                <th rowspan="2" class="group-info">Result</th>
+                                <th colspan="3" class="group-claude" id="thClaude">🤖 Claude</th>
+                                <th colspan="3" class="group-chatgpt" id="thChatGPT">💬 ChatGPT</th>
+                                <th colspan="3" class="group-deepseek" id="thDeepSeek">🔍 DeepSeek</th>
+                                <th colspan="3" class="group-nosort" id="thNoSort">📈 NoSort</th>
+                                <th colspan="3" class="group-withsort" id="thWithSort">📊 WithSort</th>
+                            </tr>
+                            <tr>
+                                <th class="group-claude">Predict</th>
+                                <th class="group-claude">Status</th>
+                                <th class="group-claude">Loss</th>
+                                <th class="group-chatgpt">Predict</th>
+                                <th class="group-chatgpt">Status</th>
+                                <th class="group-chatgpt">Loss</th>
+                                <th class="group-deepseek">Predict</th>
+                                <th class="group-deepseek">Status</th>
+                                <th class="group-deepseek">Loss</th>
+                                <th class="group-nosort">Predict</th>
+                                <th class="group-nosort">Status</th>
+                                <th class="group-nosort">Loss</th>
+                                <th class="group-withsort">Predict</th>
+                                <th class="group-withsort">Status</th>
+                                <th class="group-withsort">Loss</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analysisTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="guideTab" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px 18px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0 0 4px 0; font-size: 16px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <span>📖</span> คู่มือตรรกะและการทำนายผลของ AI ทั้ง 5 โมเดล
+                    </h3>
+                    <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">
+                        เอกสารสรุปจาก <code style="background: rgba(0,0,0,0.15); padding: 2px 6px; border-radius: 4px; font-family: monospace;">aiPredict.md</code> อธิบายการคำนวณและ Indicator ของ Claude, ChatGPT, DeepSeek, NoSort และ WithSort
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button onclick="document.getElementById('guideIframe').contentWindow.location.reload();" class="open-window-btn" style="background: var(--bg-stat); color: var(--text-primary); border: 1px solid var(--border-color); cursor: pointer;" title="โหลดเอกสารใหม่">
+                        🔄 รีเฟรช
+                    </button>
+                    <a href="aiPredict.html" target="_blank" class="open-window-btn" title="เปิดอ่านแบบเต็มจอในแท็บใหม่">
+                        ↗ เปิดเต็มจอ (New Tab)
+                    </a>
+                </div>
+            </div>
+            <iframe id="guideIframe" src="aiPredict.html" style="width: 100%; height: 900px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); display: block;" title="AI Predict Documentation"></iframe>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let chart;
+        let candleSeries;
+        let currentAnalysisData = null;
+        let markerSeries = null;
+        let currentMarkers = [];
+        let currentActiveAI = null;
+
+        // AI metadata
+        const AI_CONFIG = {
+            'claude': { key: 'Claude', name: '🤖 Claude', color: '#FF6B6B' },
+            'chatgpt': { key: 'ChatGPT', name: '💬 ChatGPT', color: '#51CF66' },
+            'deepseek': { key: 'DeepSeek', name: '🔍 DeepSeek', color: '#339AF0' },
+            'nosort': { key: 'NoSort', name: '📈 NoSort', color: '#FAB005' },
+            'withsort': { key: 'WithSort', name: '📊 WithSort', color: '#AE3EC9' }
+        };
+
+        // Initialize chart
+        // Theme management
+        function getChartColors() {
+            const style = getComputedStyle(document.documentElement);
+            return {
+                bg: style.getPropertyValue('--chart-bg').trim(),
+                text: style.getPropertyValue('--chart-text').trim(),
+                grid: style.getPropertyValue('--chart-grid').trim(),
+            };
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('deriv-theme', theme);
+
+            // Update theme buttons
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === theme);
+            });
+
+            // Update chart colors
+            if (chart) {
+                const colors = getChartColors();
+                chart.applyOptions({
+                    layout: {
+                        background: { color: colors.bg },
+                        textColor: colors.text,
+                    },
+                    grid: {
+                        vertLines: { color: colors.grid },
+                        horzLines: { color: colors.grid },
+                    },
+                });
+
+                // Refresh markers if an AI is currently active
+                if (currentActiveAI) {
+                    showMarkersForAI(currentActiveAI);
+                }
+            }
+
+            // Sync theme with embedded guide iframe if present
+            const guideIframe = document.getElementById('guideIframe');
+            if (guideIframe && guideIframe.contentWindow) {
+                try {
+                    if (typeof guideIframe.contentWindow.setDocTheme === 'function') {
+                        guideIframe.contentWindow.setDocTheme(theme);
+                    }
+                } catch (e) {
+                    // Ignore potential cross-origin or load timing restrictions
+                }
+            }
+        }
+
+        // Load saved theme
+        (function () {
+            const saved = localStorage.getItem('deriv-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+            // Buttons will be updated after DOM is ready
+        })();
+
+        function initChart() {
+            const colors = getChartColors();
+            chart = LightweightCharts.createChart(document.getElementById('chart'), {
+                width: document.getElementById('chart').clientWidth,
+                height: 600,
+                layout: {
+                    background: { color: colors.bg },
+                    textColor: colors.text,
+                },
+                grid: {
+                    vertLines: { color: colors.grid },
+                    horzLines: { color: colors.grid },
+                },
+                timeScale: {
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+                localization: {
+                    timeFormatter: timestamp => {
+                        return new Date(timestamp * 1000).toLocaleTimeString('th-TH', {
+                            timeZone: 'Asia/Bangkok',
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    }
+                }
+            });
+
+            candleSeries = chart.addCandlestickSeries({
+                upColor: '#26a69a',
+                downColor: '#ef5350',
+                borderVisible: false,
+                wickUpColor: '#26a69a',
+                wickDownColor: '#ef5350',
+            });
+
+            // Add marker series
+            markerSeries = candleSeries;
+
+            // Setup AI button listeners
+            document.querySelectorAll('.ai-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const ai = this.dataset.ai;
+
+                    if (ai === 'clear') {
+                        clearMarkers(true);
+                    } else {
+                        // Remove active class from all buttons
+                        document.querySelectorAll('.ai-btn').forEach(b => b.classList.remove('active'));
+                        // Add active class to clicked button
+                        this.classList.add('active');
+                        currentActiveAI = ai;
+                        showMarkersForAI(ai);
+                    }
+                });
+            });
+
+            // Setup Filter Type radio listeners (auto update active marker)
+            document.querySelectorAll('input[name="markerType"]').forEach(radio => {
+                radio.addEventListener('change', function () {
+                    if (currentActiveAI) {
+                        showMarkersForAI(currentActiveAI);
+                    }
+                });
+            });
+        }
+
+        // Show markers for specific AI
+        function showMarkersForAI(aiName) {
+            if (!currentAnalysisData || !currentAnalysisData.labStJson) {
+                alert('Please load and analyze data first!');
+                return;
+            }
+
+            const trades = currentAnalysisData.labStJson;
+            const markerType = document.querySelector('input[name="markerType"]:checked').value;
+
+            // Clear existing markers on chart without resetting active state
+            clearMarkers(false);
+
+            const config = AI_CONFIG[aiName];
+            if (!config) return;
+            const aiKey = config.key;
+            const markers = [];
+
+            // Track consecutive wins/losses and statistics
+            let winCon = 0;
+            let lossCon = 0;
+            let winCount = 0;
+            let normalLossCount = 0;
+            let highLossCount = 0;
+
+            // Contrast yellow for light and dark themes
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const yellowColor = isLight ? '#d97706' : '#ffd700';
+
+            trades.forEach((trade, index) => {
+                const aiData = trade[aiKey];
+                if (!aiData) return;
+
+                const isWin = aiData.WinStatus === '💲Win' || (aiData.WinStatus && aiData.WinStatus.includes('Win'));
+                const time = trade.timeCandle;
+
+                // Update consecutive counters
+                if (isWin) {
+                    winCon++;
+                    lossCon = 0;
+                } else {
+                    lossCon++;
+                    winCon = 0;
+                }
+
+                const effectiveLossCon = (aiData.LossCon !== undefined && aiData.LossCon > 0) ? parseInt(aiData.LossCon) : lossCon;
+                const isHighLoss = !isWin && effectiveLossCon >= 5;
+
+                // Determine if we should show this marker
+                let shouldShow = false;
+                if (markerType === 'win' && isWin) shouldShow = true;
+                if (markerType === 'loss' && !isWin) shouldShow = true;
+                if (markerType === 'both') shouldShow = true;
+
+                if (shouldShow) {
+                    if (isWin) {
+                        winCount++;
+                    } else if (isHighLoss) {
+                        highLossCount++;
+                    } else {
+                        normalLossCount++;
+                    }
+
+                    // In lightweight-charts, marker color applies to both shape and text
+                    // If LossCon >= 5, set color to yellow (#ffd700)
+                    const markerColor = isWin ? '#26a69a' : (isHighLoss ? yellowColor : '#ef5350');
+
+                    const marker = {
+                        time: time,
+                        position: isWin ? 'belowBar' : 'aboveBar',
+                        color: markerColor,
+                        shape: isWin ? 'arrowUp' : 'arrowDown',
+                        text: isWin ? `Win:${winCon}` : (isHighLoss ? `Loss:${effectiveLossCon}⚠️` : `Loss:${effectiveLossCon}`),
+                        size: isHighLoss ? 2 : 1
+                    };
+                    markers.push(marker);
+                }
+            });
+
+            // Set markers to chart
+            if (markers.length > 0) {
+                markerSeries.setMarkers(markers);
+                currentMarkers = markers;
+            } else {
+                markerSeries.setMarkers([]);
+                currentMarkers = [];
+            }
+
+            // Update Active Marker Notice Banner
+            const banner = document.getElementById('activeMarkerBanner');
+            const badge = document.getElementById('activeAINameBadge');
+            const statsEl = document.getElementById('activeAIMarkerStats');
+
+            if (banner && badge && statsEl) {
+                badge.textContent = config.name;
+                badge.style.background = config.color;
+
+                let statsText = `(แสดง <strong>${markers.length}</strong> จุด`;
+                if (markers.length > 0) {
+                    statsText += ` | Win: <strong>${winCount}</strong> | Loss: <strong>${normalLossCount}</strong>`;
+                    if (highLossCount > 0) {
+                        statsText += ` | <span style="color: ${yellowColor}; font-weight: bold; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px;">⚠️ Loss Con ≥ 5: ${highLossCount} จุด</span>`;
+                    }
+                } else {
+                    statsText += ` - ไม่มีข้อมูลตามตัวกรอง "${markerType}"`;
+                }
+                statsText += `)`;
+
+                statsEl.innerHTML = statsText;
+                banner.classList.add('show');
+            }
+        }
+
+        // Clear all markers
+        function clearMarkers(resetActive = true) {
+            if (markerSeries) {
+                markerSeries.setMarkers([]);
+                currentMarkers = [];
+            }
+            if (resetActive) {
+                currentActiveAI = null;
+                document.querySelectorAll('.ai-btn').forEach(b => b.classList.remove('active'));
+                const banner = document.getElementById('activeMarkerBanner');
+                if (banner) {
+                    banner.classList.remove('show');
+                }
+            }
+        }
+
+        // Toggle tabs
+        function switchTab(tabName, ev) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+            const targetBtn = (ev && ev.currentTarget) ? ev.currentTarget : (typeof event !== 'undefined' && event && event.target ? event.target : null);
+            if (targetBtn) {
+                targetBtn.classList.add('active');
+            }
+            const targetContent = document.getElementById(tabName + 'Tab');
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        }
+
+        // Toggle AI Predictions Panel
+        function toggleAIPredictions() {
+            const panel = document.getElementById('aiPredictionsPanel');
+            const icon = document.getElementById('toggleIcon');
+            const btn = event.target;
+
+            if (panel.classList.contains('show')) {
+                panel.classList.remove('show');
+                icon.textContent = '▼';
+                btn.innerHTML = '<span id="toggleIcon">▼</span> Show AI Predictions Panel';
+            } else {
+                panel.classList.add('show');
+                icon.textContent = '▲';
+                btn.innerHTML = '<span id="toggleIcon">▲</span> Hide AI Predictions Panel';
+            }
+        }
+
+        let availableAccounts = [];
+        let selectedAccount = null;
+
+        // Load Deriv accounts from get-deriv-accounts.php
+        async function loadDerivAccounts() {
+            try {
+                const res = await fetch('get-deriv-accounts.php?action=list');
+                const data = await res.json();
+                if (data.success && Array.isArray(data.accounts) && data.accounts.length > 0) {
+                    availableAccounts = data.accounts;
+                    const select = document.getElementById('accountSelect');
+                    select.innerHTML = '';
+                    availableAccounts.forEach((acc) => {
+                        const opt = document.createElement('option');
+                        opt.value = acc.id;
+                        opt.textContent = `[${acc.accountId || acc.id}] ${acc.appName || acc.email}`;
+                        select.appendChild(opt);
+                    });
+
+                    // Restore saved account or select first
+                    const savedAccId = localStorage.getItem('deriv-account-id');
+                    if (savedAccId && availableAccounts.some(a => String(a.id) === String(savedAccId))) {
+                        select.value = savedAccId;
+                    }
+                    selectedAccount = availableAccounts.find(a => String(a.id) === String(select.value)) || availableAccounts[0];
+                    updateAccountDisplay();
+                } else {
+                    throw new Error(data.error || 'No active Deriv accounts found');
+                }
+            } catch (err) {
+                console.error('Failed to load accounts:', err);
+                const select = document.getElementById('accountSelect');
+                if (select) {
+                    select.innerHTML = '<option value="">⚠️ ไม่พบบัญชี Deriv</option>';
+                }
+                showError('ไม่สามารถโหลดข้อมูลบัญชี Deriv ได้: ' + err.message);
+            }
+        }
+
+        function updateAccountDisplay() {
+            const accEl = document.getElementById('currentAccount');
+            if (accEl && selectedAccount) {
+                accEl.textContent = `${selectedAccount.accountId || ''} (${selectedAccount.appName || selectedAccount.email})`;
+            }
+        }
+
+        let availableAssets = [];
+
+        // Load Synthetic assets from MySQL table `asset` (WHERE subgroup = 'synthetics' AND symbol_type = 'stockindex' AND submarket = 'random_index')
+        async function loadSyntheticAssets() {
+            const select = document.getElementById('assetSelect');
+            if (!select) return;
+
+            try {
+                let res = await fetch('get-assets.php');
+                if (!res.ok) {
+                    res = await fetch('get-deriv-accounts.php?action=get_assets');
+                }
+                const data = await res.json();
+                if (data.success && Array.isArray(data.assets) && data.assets.length > 0) {
+                    availableAssets = data.assets;
+                    const prevValue = select.value || localStorage.getItem('deriv-asset-code') || 'R_10';
+                    select.innerHTML = '';
+                    availableAssets.forEach((item) => {
+                        const opt = document.createElement('option');
+                        opt.value = item.asset_code;
+                        opt.textContent = item.asset_name;
+                        select.appendChild(opt);
+                    });
+
+                    // Restore previous selected value or default to R_10
+                    if (availableAssets.some(a => a.asset_code === prevValue)) {
+                        select.value = prevValue;
+                    } else if (availableAssets.some(a => a.asset_code === 'R_10')) {
+                        select.value = 'R_10';
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to load synthetic assets from MySQL asset table:', err);
+            }
+        }
+
+        // Connect to Deriv WebSocket using OTP from get-deriv-accounts.php
+        async function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                return;
+            }
+
+            const accId = document.getElementById('accountSelect') ? document.getElementById('accountSelect').value : '';
+            updateStatus(false, 'กำลังขอ OTP WebSocket...');
+
+            let wsUrl = null;
+            let accountInfo = null;
+
+            try {
+                const otpRes = await fetch(`get-deriv-accounts.php?action=get_ws_url&id=${encodeURIComponent(accId)}`);
+                const otpData = await otpRes.json();
+                if (otpData.success && otpData.wsUrl) {
+                    wsUrl = otpData.wsUrl;
+                    accountInfo = otpData;
+                } else {
+                    console.warn('OTP helper warning:', otpData.error);
+                    wsUrl = otpData.fallbackWsUrl || 'wss://api.derivws.com/trading/v1/options/ws/public';
+                }
+            } catch (e) {
+                console.error('OTP request error:', e);
+                wsUrl = 'wss://api.derivws.com/trading/v1/options/ws/public';
+            }
+
+            return new Promise((resolve, reject) => {
+                try {
+                    if (ws) {
+                        try { ws.close(); } catch (_) {}
+                    }
+                    ws = new WebSocket(wsUrl);
+
+                    ws.onopen = () => {
+                        console.log('WebSocket Connected to:', wsUrl);
+                        const label = accountInfo ? `Connected (${accountInfo.accountId})` : 'Connected to Deriv API';
+                        updateStatus(true, label);
+                        resolve();
+                    };
+
+                    ws.onerror = (error) => {
+                        console.error('WebSocket Error:', error);
+                        updateStatus(false, 'Connection Error');
+                        reject(error);
+                    };
+
+                    ws.onclose = (event) => {
+                        console.log('WebSocket Disconnected', event.code, event.reason);
+                        updateStatus(false, 'Disconnected');
+                    };
+
+                    ws.onmessage = (msg) => {
+                        const data = JSON.parse(msg.data);
+                        handleWebSocketMessage(data);
+                    };
+                } catch (err) {
+                    updateStatus(false, 'WS Init Error');
+                    reject(err);
+                }
+            });
+        }
+
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            if (data.error) {
+                showError(data.error.message);
+                return;
+            }
+
+            if (data.candles) {
+                displayCandles(data.candles);
+            }
+        }
+
+        // Load candles
+        async function loadCandles() {
+            const symbol = document.getElementById('assetSelect').value;
+            const granularity = document.getElementById('granularitySelect').value;
+            const mode = document.getElementById('modeSelect').value;
+
+            showLoading();
+            hideError();
+
+            try {
+                if (!ws || ws.readyState !== WebSocket.OPEN) {
+                    await connectWebSocket();
+                }
+
+                let request;
+                if (mode === 'count') {
+                    const count = document.getElementById('countSelect').value;
+                    request = {
+                        ticks_history: symbol,
+                        adjust_start_time: 1,
+                        count: parseInt(count),
+                        end: 'latest',
+                        start: 1,
+                        style: 'candles',
+                        granularity: parseInt(granularity)
+                    };
+                } else {
+                    const startDate = new Date(document.getElementById('startDate').value).getTime() / 1000;
+                    const endDate = new Date(document.getElementById('endDate').value).getTime() / 1000;
+                    const nowEpoch = Math.floor(Date.now() / 1000);
+                    const reqEnd = (endDate >= nowEpoch || isNaN(endDate)) ? 'latest' : Math.floor(endDate);
+
+                    request = {
+                        ticks_history: symbol,
+                        adjust_start_time: 1,
+                        start: Math.floor(startDate),
+                        end: reqEnd,
+                        count: 5000,
+                        style: 'candles',
+                        granularity: parseInt(granularity)
+                    };
+                }
+
+                console.log('Sending Deriv request:', request);
+                ws.send(JSON.stringify(request));
+
+            } catch (error) {
+                console.error('Error loading candles:', error);
+                showError('Failed to load: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Display candles
+        function displayCandles(candles) {
+            hideLoading();
+
+            const candleData = candles.map(candle => ({
+                time: candle.epoch,
+                open: parseFloat(candle.open),
+                high: parseFloat(candle.high),
+                low: parseFloat(candle.low),
+                close: parseFloat(candle.close)
+            }));
+
+            candleSeries.setData(candleData);
+            chart.timeScale().fitContent();
+
+            document.getElementById('currentSymbol').textContent = document.getElementById('assetSelect').options[document.getElementById('assetSelect').selectedIndex].text;
+            document.getElementById('currentTimeframe').textContent = document.getElementById('granularitySelect').options[document.getElementById('granularitySelect').selectedIndex].text;
+            document.getElementById('currentCandles').textContent = candles.length;
+
+            // Start AI analysis
+            analyzeWithAI(candleData);
+        }
+
+        // Analyze with AI (Ajax)
+        async function analyzeWithAI(candleData) {
+            document.getElementById('loadingAnalysis').classList.add('show');
+            document.getElementById('analysisResults').style.display = 'none';
+
+            try {
+                const assetCode = document.getElementById('assetSelect').value;
+
+                console.log('Sending candle data for analysis...', {
+                    totalCandles: candleData.length,
+                    assetCode: assetCode
+                });
+
+                const response = await fetch('api-receive-candle-v2.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        candles: candleData,
+                        assetCode: assetCode
+                    })
+                });
+
+                let result;
+                try {
+                    result = await response.json();
+                } catch (parseErr) {
+                    throw new Error(`Server error (${response.status} ${response.statusText})`);
+                }
+
+                console.log('Analysis result:', result);
+
+                if (response.ok && result.success) {
+                    currentAnalysisData = result.data;
+                    displayAnalysisResults(result.data);
+                    updateAIPredictions(result.data);
+                    showSuccess('✅ Analysis completed! ' + result.stats.totalTrades + ' trades analyzed.');
+                } else {
+                    throw new Error(result.error || `Error (${response.status}): Unknown error`);
+                }
+
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showError('Failed to analyze: ' + error.message);
+            } finally {
+                document.getElementById('loadingAnalysis').classList.remove('show');
+            }
+        }
+
+        // Display analysis results in table
+        function displayAnalysisResults(data) {
+            if (!data || !data.labStJson) {
+                showError('Invalid analysis data');
+                return;
+            }
+
+            const trades = data.labStJson;
+
+            // Calculate stats (Win Rate & Max Consecutive Loss) for each AI
+            const aiModels = [
+                { key: 'Claude', name: '🤖 Claude', cardClass: 'claude-card', thId: 'thClaude' },
+                { key: 'ChatGPT', name: '💬 ChatGPT', cardClass: 'chatgpt-card', thId: 'thChatGPT' },
+                { key: 'DeepSeek', name: '🔍 DeepSeek', cardClass: 'deepseek-card', thId: 'thDeepSeek' },
+                { key: 'NoSort', name: '📈 NoSort', cardClass: 'nosort-card', thId: 'thNoSort' },
+                { key: 'WithSort', name: '📊 WithSort', cardClass: 'withsort-card', thId: 'thWithSort' }
+            ];
+
+            const stats = {};
+            aiModels.forEach(m => {
+                stats[m.key] = { wins: 0, losses: 0, maxLoss: 0, winRate: '0.0' };
+            });
+
+            trades.forEach(trade => {
+                aiModels.forEach(m => {
+                    const aiData = trade[m.key];
+                    if (aiData) {
+                        const isWin = aiData.WinStatus === '💲Win' || (aiData.WinStatus && aiData.WinStatus.includes('Win'));
+                        if (isWin) {
+                            stats[m.key].wins++;
+                        } else {
+                            stats[m.key].losses++;
+                        }
+                        const lc = parseInt(aiData.LossCon) || 0;
+                        if (lc > stats[m.key].maxLoss) {
+                            stats[m.key].maxLoss = lc;
+                        }
+                    }
+                });
+            });
+
+            const totalTrades = trades.length;
+            aiModels.forEach(m => {
+                const s = stats[m.key];
+                s.winRate = totalTrades > 0 ? ((s.wins / totalTrades) * 100).toFixed(1) : '0.0';
+
+                // Update table header if exists
+                const th = document.getElementById(m.thId);
+                if (th) {
+                    th.innerHTML = `${m.name} <span style="font-size: 0.82em; opacity: 0.95; margin-left: 4px; font-weight: normal; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 10px;">(WR: ${s.winRate}%)</span>`;
+                }
+            });
+
+            // Display summary cards with Win Rate and Max Loss
+            document.getElementById('maxLossSummary').innerHTML = aiModels.map(m => {
+                const s = stats[m.key];
+                const wrNum = parseFloat(s.winRate);
+                const wrColor = wrNum >= 50 ? '#28a745' : '#ef5350';
+                return `
+                    <div class="max-loss-card ${m.cardClass}">
+                        <div class="max-loss-title">${m.name}</div>
+                        <div class="win-rate-box">
+                            <div class="win-rate-label">Win Rate</div>
+                            <div class="win-rate-value" style="color: ${wrColor};">${s.winRate}%</div>
+                            <div class="win-rate-sub">${s.wins}W / ${s.losses}L (รวม: ${totalTrades})</div>
+                        </div>
+                        <div class="max-loss-section">
+                            <div class="max-loss-value">${s.maxLoss}</div>
+                            <div class="max-loss-label">Max Consecutive Losses</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Display table
+            const tbody = document.getElementById('analysisTableBody');
+            tbody.innerHTML = '';
+
+            trades.forEach(trade => {
+                // Ensure time is formatted in Thai time (Asia/Bangkok)
+                let timeStr = trade.SuggestTimeCandle;
+                if (trade.timeCandle) {
+                    timeStr = new Date(trade.timeCandle * 1000).toLocaleTimeString('th-TH', {
+                        timeZone: 'Asia/Bangkok',
+                        hour12: false,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                }
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${trade.TradeNoIndex}</strong></td>
+                    <td>${timeStr}</td>
+                    <td class="${trade.resultColor.includes('Green') ? 'green-result' : 'red-result'}">${trade.resultColor}</td>
+                    <td class="col-claude">${trade.Claude.SuggestColor}</td>
+                    <td class="col-claude ${trade.Claude.WinStatus === '💲Win' ? 'win' : 'loss'}">${trade.Claude.WinStatus}</td>
+                    <td class="col-claude"><strong>${trade.Claude.LossCon}</strong></td>
+                    <td class="col-chatgpt">${trade.ChatGPT.SuggestColor}</td>
+                    <td class="col-chatgpt ${trade.ChatGPT.WinStatus === '💲Win' ? 'win' : 'loss'}">${trade.ChatGPT.WinStatus}</td>
+                    <td class="col-chatgpt"><strong>${trade.ChatGPT.LossCon}</strong></td>
+                    <td class="col-deepseek">${trade.DeepSeek.SuggestColor}</td>
+                    <td class="col-deepseek ${trade.DeepSeek.WinStatus === '💲Win' ? 'win' : 'loss'}">${trade.DeepSeek.WinStatus}</td>
+                    <td class="col-deepseek"><strong>${trade.DeepSeek.LossCon}</strong></td>
+                    <td class="col-nosort">${trade.NoSort.SuggestColor}</td>
+                    <td class="col-nosort ${trade.NoSort.WinStatus === '💲Win' ? 'win' : 'loss'}">${trade.NoSort.WinStatus}</td>
+                    <td class="col-nosort"><strong>${trade.NoSort.LossCon}</strong></td>
+                    <td class="col-withsort">${trade.WithSort.SuggestColor}</td>
+                    <td class="col-withsort ${trade.WithSort.WinStatus === '💲Win' ? 'win' : 'loss'}">${trade.WithSort.WinStatus}</td>
+                    <td class="col-withsort"><strong>${trade.WithSort.LossCon}</strong></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('analysisResults').style.display = 'block';
+        }
+
+        // Update AI Predictions (from last trade)
+        function updateAIPredictions(data) {
+            if (!data || !data.labStJson || data.labStJson.length === 0) return;
+
+            const lastTrade = data.labStJson[data.labStJson.length - 1];
+
+            // Claude
+            updateAIPrediction('claude', {
+                prediction: lastTrade.Claude.SuggestColor,
+                green: lastTrade.Claude.SuggestColor === 'Green' ? 65 : 35,
+                red: lastTrade.Claude.SuggestColor === 'Red' ? 65 : 35
+            });
+
+            // ChatGPT
+            updateAIPrediction('chatgpt', {
+                prediction: lastTrade.ChatGPT.SuggestColor,
+                green: lastTrade.ChatGPT.SuggestColor === 'Green' ? 65 : 35,
+                red: lastTrade.ChatGPT.SuggestColor === 'Red' ? 65 : 35
+            });
+
+            // DeepSeek
+            updateAIPrediction('deepseek', {
+                prediction: lastTrade.DeepSeek.SuggestColor,
+                green: lastTrade.DeepSeek.SuggestColor === 'Green' ? 65 : 35,
+                red: lastTrade.DeepSeek.SuggestColor === 'Red' ? 65 : 35
+            });
+
+            // Update Consensus
+            updateConsensus({
+                claude: { prediction: lastTrade.Claude.SuggestColor },
+                chatgpt: { prediction: lastTrade.ChatGPT.SuggestColor },
+                deepseek: { prediction: lastTrade.DeepSeek.SuggestColor }
+            });
+
+            document.getElementById('consensusBox').style.display = 'block';
+        }
+
+        // Update individual AI prediction
+        function updateAIPrediction(aiName, data) {
+            const predictionEl = document.getElementById(`${aiName}Prediction`);
+            const greenBar = document.getElementById(`${aiName}Green`);
+            const redBar = document.getElementById(`${aiName}Red`);
+            const greenText = document.getElementById(`${aiName}GreenText`);
+            const redText = document.getElementById(`${aiName}RedText`);
+
+            predictionEl.textContent = data.prediction;
+            predictionEl.className = `prediction-value ${data.prediction.toLowerCase()}`;
+
+            greenBar.style.width = data.green + '%';
+            redBar.style.width = data.red + '%';
+            greenText.textContent = data.green + '%';
+            redText.textContent = data.red + '%';
+        }
+
+        // Update consensus
+        function updateConsensus(analysis) {
+            const greenCount = [
+                analysis.claude.prediction === 'Green' ? 1 : 0,
+                analysis.deepseek.prediction === 'Green' ? 1 : 0,
+                analysis.chatgpt.prediction === 'Green' ? 1 : 0
+            ].reduce((a, b) => a + b, 0);
+
+            const consensusEl = document.getElementById('consensus');
+            const detailEl = document.getElementById('consensusDetail');
+
+            if (greenCount >= 2) {
+                consensusEl.textContent = '🟢 GREEN';
+                detailEl.textContent = `${greenCount}/3 AI models agree`;
+            } else {
+                consensusEl.textContent = '🔴 RED';
+                detailEl.textContent = `${3 - greenCount}/3 AI models agree`;
+            }
+        }
+
+        // Update connection status
+        function updateStatus(isConnected, message) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+
+            if (isConnected) {
+                dot.classList.add('connected');
+                text.textContent = message || 'Connected';
+            } else {
+                dot.classList.remove('connected');
+                text.textContent = message || 'Disconnected';
+            }
+        }
+
+        // Show/hide loading
+        function showLoading() {
+            document.getElementById('loadBtn').disabled = true;
+        }
+
+        function hideLoading() {
+            document.getElementById('loadBtn').disabled = false;
+        }
+
+        // Show/hide error
+        function showError(message) {
+            const errorEl = document.getElementById('errorMsg');
+            if (errorEl) {
+                errorEl.textContent = '⚠️ ' + message;
+                errorEl.classList.add('show');
+            }
+            showToast('⚠️ ' + message, '#dc3545');
+        }
+
+        function hideError() {
+            const errorEl = document.getElementById('errorMsg');
+            if (errorEl) {
+                errorEl.classList.remove('show');
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, bgColor = '#28a745') {
+            const toastEl = document.createElement('div');
+            toastEl.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${bgColor};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                z-index: 10000;
+                font-weight: bold;
+                max-width: 400px;
+                word-break: break-word;
+            `;
+            toastEl.textContent = message;
+            document.body.appendChild(toastEl);
+
+            setTimeout(() => toastEl.remove(), 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            showToast(message, '#28a745');
+        }
+
+        // Mode selector toggle
+        document.getElementById('modeSelect').addEventListener('change', function () {
+            const mode = this.value;
+            const countGroup = document.getElementById('countGroup');
+            const startDateGroup = document.getElementById('startDateGroup');
+            const endDateGroup = document.getElementById('endDateGroup');
+
+            if (mode === 'date') {
+                countGroup.style.display = 'none';
+                startDateGroup.style.display = 'flex';
+                endDateGroup.style.display = 'flex';
+
+                const now = new Date();
+                setDateRangeForDay(now);
+            } else {
+                countGroup.style.display = 'flex';
+                startDateGroup.style.display = 'none';
+                endDateGroup.style.display = 'none';
+            }
+        });
+
+        // Function to set date range for same day (00:05:00 to 23:55:00)
+        function setDateRangeForDay(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+
+            const startDateTime = `${year}-${month}-${day}T00:05`;
+            const endDateTime = `${year}-${month}-${day}T23:55`;
+
+            document.getElementById('startDate').value = startDateTime;
+            document.getElementById('endDate').value = endDateTime;
+        }
+
+        // Listen to startDate changes
+        document.getElementById('startDate').addEventListener('change', function () {
+            const startDateValue = this.value;
+            if (startDateValue) {
+                const selectedDate = new Date(startDateValue);
+                setDateRangeForDay(selectedDate);
+                console.log('Start date changed to:', startDateValue);
+            }
+        });
+
+        document.getElementById('startDate').addEventListener('input', function () {
+            const startDateValue = this.value;
+            if (startDateValue && startDateValue.length >= 10) {
+                const selectedDate = new Date(startDateValue);
+                if (!isNaN(selectedDate.getTime())) {
+                    setDateRangeForDay(selectedDate);
+                }
+            }
+        });
+
+        // Listen to accountSelect change
+        document.getElementById('accountSelect').addEventListener('change', async function () {
+            const id = this.value;
+            localStorage.setItem('deriv-account-id', id);
+            selectedAccount = availableAccounts.find(a => String(a.id) === String(id));
+            updateAccountDisplay();
+            if (ws) {
+                try { ws.close(); } catch (_) {}
+            }
+            try {
+                await connectWebSocket();
+                loadCandles();
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
+        // Listen to assetSelect change to remember preference
+        const assetSelectEl = document.getElementById('assetSelect');
+        if (assetSelectEl) {
+            assetSelectEl.addEventListener('change', function () {
+                localStorage.setItem('deriv-asset-code', this.value);
+                const currentSymbolEl = document.getElementById('currentSymbol');
+                if (currentSymbolEl && this.selectedIndex >= 0) {
+                    currentSymbolEl.textContent = this.options[this.selectedIndex].text;
+                }
+            });
+        }
+
+        // Event listeners
+        document.getElementById('loadBtn').addEventListener('click', loadCandles);
+
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            // Apply saved theme to buttons
+            const savedTheme = localStorage.getItem('deriv-theme') || 'dark';
+            setTheme(savedTheme);
+
+            initChart();
+
+            // Set default date range
+            const mode = document.getElementById('modeSelect').value;
+            if (mode === 'date') {
+                const now = new Date();
+                setDateRangeForDay(now);
+            }
+
+            // Load Deriv accounts and Synthetic assets from MySQL table 'asset'
+            await Promise.all([
+                loadDerivAccounts(),
+                loadSyntheticAssets()
+            ]);
+
+            setTimeout(() => {
+                loadCandles();
+            }, 500);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (ws) {
+                ws.close();
+            }
+        });
+    </script>
+</body>
+
+</html>

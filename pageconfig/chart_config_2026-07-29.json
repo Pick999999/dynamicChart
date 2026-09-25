@@ -1,0 +1,122 @@
+{
+    "chart": {
+        "container": "chart-container",
+        "width": 800,
+        "height": 500,
+        "options": {
+            "layout": {
+                "background": {
+                    "color": "#0f1629"
+                },
+                "textColor": "#94a3b8"
+            },
+            "grid": {
+                "vertLines": {
+                    "color": "rgba(255,255,255,0.03)"
+                },
+                "horzLines": {
+                    "color": "rgba(255,255,255,0.03)"
+                }
+            },
+            "timeScale": {
+                "timeVisible": true,
+                "secondsVisible": false
+            }
+        }
+    },
+    "candle": {
+        "id": "main-candle",
+        "data": [],
+        "options": {
+            "upColor": "#26a69a",
+            "downColor": "#ef5350",
+            "borderVisible": false,
+            "wickUpColor": "#26a69a",
+            "wickDownColor": "#ef5350",
+            "wickVisible": true
+        }
+    },
+    "indicators": [
+        {
+            "id": "ema-20",
+            "type": "ema",
+            "period": 20,
+            "source": "close",
+            "visible": true,
+            "color": "#38bdf8",
+            "lineWidth": 1
+        },
+        {
+            "id": "hma-50",
+            "type": "hma",
+            "period": 50,
+            "source": "close",
+            "visible": false,
+            "color": "#fbbf24",
+            "lineWidth": 1
+        },
+        {
+            "id": "wma-14",
+            "type": "wma",
+            "period": 14,
+            "source": "close",
+            "visible": false,
+            "color": "#34d399",
+            "lineWidth": 1
+        },
+        {
+            "id": "bb-20",
+            "type": "bb",
+            "period": 5,
+            "stdDev": 2,
+            "source": "close",
+            "visible": true,
+            "colors": {
+                "upper": "#a78bfa",
+                "middle": "#64748b",
+                "lower": "#a78bfa"
+            },
+            "lineWidth": 1
+        },
+        {
+            "id": "hline-resistance",
+            "type": "horizontalLine",
+            "value": 108.5,
+            "visible": false,
+            "color": "#f87171",
+            "lineStyle": "dashed",
+            "lineWidth": 1
+        },
+        {
+            "id": "ema-3-c1",
+            "type": "ema",
+            "visible": true,
+            "lineWidth": 1,
+            "period": 3,
+            "source": "close",
+            "color": "#ffffff"
+        },
+        {
+            "id": "ema-5-c1",
+            "type": "ema",
+            "visible": true,
+            "lineWidth": 1,
+            "period": 5,
+            "source": "close",
+            "color": "#f83a3a"
+        },
+        {
+            "id": "smc-main-1",
+            "type": "smc",
+            "visible": true,
+            "lineWidth": 1,
+            "showChoch": true,
+            "showBOS": true,
+            "showSwingPoints": true,
+            "showOrderBlocks": true,
+            "showFVG": true,
+            "showEqualHL": true,
+            "showPremiumDiscount": true
+        }
+    ]
+}

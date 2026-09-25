@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prediction Documentation - Deriv AI Analysis</title>
+    <style>
+        /* ===== THEME VARIABLES ===== */
+        [data-theme="light"] {
+            --bg-body: #f4f6f9;
+            --bg-container: #ffffff;
+            --bg-header: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-card: #ffffff;
+            --bg-card-header: #f8f9fa;
+            --bg-code: #f1f3f5;
+            --bg-table-stripe: #f8f9fa;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --text-header: #ffffff;
+            --border-color: #e2e8f0;
+            --border-highlight: #cbd5e0;
+            --shadow-card: 0 4px 15px rgba(0, 0, 0, 0.05);
+            --badge-bg: #edf2f7;
+            --badge-text: #2d3748;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #0a0c0f;
+            --bg-container: #111419;
+            --bg-header: linear-gradient(135deg, #111419 0%, #181c23 100%);
+            --bg-card: #181c23;
+            --bg-card-header: #1e232d;
+            --bg-code: #0e1116;
+            --bg-table-stripe: #151921;
+            --text-primary: #e8eaf0;
+            --text-secondary: #a0aec0;
+            --text-muted: #718096;
+            --text-header: #ffffff;
+            --border-color: #222733;
+            --border-highlight: #2d3748;
+            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --badge-bg: #222733;
+            --badge-text: #e8eaf0;
+        }
+
+        [data-theme="blue"] {
+            --bg-body: #071526;
+            --bg-container: #0d2137;
+            --bg-header: linear-gradient(135deg, #0d2137 0%, #103254 100%);
+            --bg-card: #102a45;
+            --bg-card-header: #143557;
+            --bg-code: #081a2e;
+            --bg-table-stripe: #0c233c;
+            --text-primary: #cce5ff;
+            --text-secondary: #90c4f0;
+            --text-muted: #5a9bd4;
+            --text-header: #ffffff;
+            --border-color: #183d5d;
+            --border-highlight: #235582;
+            --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --badge-bg: #183d5d;
+            --badge-text: #cce5ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--bg-container);
+            border-radius: 12px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .doc-header {
+            background: var(--bg-header);
+            color: var(--text-header);
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .doc-title h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .doc-title p {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        /* Theme Switcher */
+        .theme-switcher {
+            display: flex;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 3px;
+            border-radius: 20px;
+            gap: 4px;
+        }
+
+        .theme-btn {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .theme-btn.active {
+            background: #ffffff;
+            color: #111419;
+            font-weight: bold;
+        }
+
+        /* Content */
+        .content {
+            padding: 30px;
+        }
+
+        /* Quick Navigation Bar */
+        .quick-nav {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-item {
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.2s ease, filter 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .nav-item:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .nav-claude { background: #FF6B6B; }
+        .nav-chatgpt { background: #51CF66; }
+        .nav-deepseek { background: #339AF0; }
+        .nav-nosort { background: #FAB005; }
+        .nav-withsort { background: #AE3EC9; }
+        .nav-summary { background: #6c757d; }
+
+        /* AI Cards */
+        .ai-doc-card {
+            background: var(--bg-card);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 35px;
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+        }
+
+        .ai-doc-card.claude { border-left: 6px solid #FF6B6B; }
+        .ai-doc-card.chatgpt { border-left: 6px solid #51CF66; }
+        .ai-doc-card.deepseek { border-left: 6px solid #339AF0; }
+        .ai-doc-card.nosort { border-left: 6px solid #FAB005; }
+        .ai-doc-card.withsort { border-left: 6px solid #AE3EC9; }
+
+        .card-header {
+            background: var(--bg-card-header);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: monospace;
+            background: var(--badge-bg);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin: 18px 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-title:first-child {
+            margin-top: 0;
+        }
+
+        .highlight-box {
+            background: var(--bg-code);
+            border-radius: 8px;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        /* Rules List */
+        .rule-list {
+            list-style: none;
+            margin-bottom: 15px;
+        }
+
+        .rule-list li {
+            padding: 8px 12px;
+            border-bottom: 1px dashed var(--border-color);
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .rule-list li:last-child {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .badge-green { background: rgba(40, 167, 69, 0.2); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.4); }
+        .badge-red { background: rgba(220, 53, 69, 0.2); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.4); }
+        .badge-info { background: rgba(23, 162, 184, 0.2); color: #17a2b8; border: 1px solid rgba(23, 162, 184, 0.4); }
+
+        /* Tables */
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        .doc-table th {
+            background: var(--bg-card-header);
+            color: var(--text-primary);
+            text-align: left;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            font-weight: 700;
+        }
+
+        .doc-table td {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .doc-table tr:nth-child(even) {
+            background: var(--bg-table-stripe);
+        }
+
+        /* Formulas */
+        .formula-box {
+            background: var(--bg-code);
+            border-left: 3px solid #667eea;
+            padding: 10px 15px;
+            font-family: Consolas, Monaco, "Courier New", monospace;
+            font-size: 13px;
+            color: var(--text-primary);
+            border-radius: 0 6px 6px 0;
+            margin: 10px 0;
+        }
+
+        /* Action Badge */
+        .action-decision {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: var(--bg-code);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-top: 15px;
+        }
+
+        .decision-tag {
+            font-weight: bold;
+            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .decision-green { background: #28a745; color: #fff; }
+        .decision-red { background: #dc3545; color: #fff; }
+
+        /* Footer */
+        .doc-footer {
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-muted);
+            background: var(--bg-card-header);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="doc-header">
+            <div class="doc-title">
+                <h1>🤖 AI Prediction Documentation</h1>
+                <p>สรุปแนวคิด กลไกการคำนวณ อินดิเคเตอร์ และเงื่อนไขการตัดสินใจของ AI แต่ละโมเดล</p>
+            </div>
+            <div class="header-actions">
+                <a href="deriv-full-analysis-v2.html" class="back-btn">⬅️ กลับสู่หน้าแดชบอร์ด</a>
+                <div class="theme-switcher">
+                    <button class="theme-btn" data-theme="light" onclick="setDocTheme('light')">☀️</button>
+                    <button class="theme-btn active" data-theme="dark" onclick="setDocTheme('dark')">🌙</button>
+                    <button class="theme-btn" data-theme="blue" onclick="setDocTheme('blue')">🌊</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Quick Navigation -->
+            <div class="quick-nav">
+                <a href="#claude" class="nav-item nav-claude">🤖 Claude</a>
+                <a href="#chatgpt" class="nav-item nav-chatgpt">💬 ChatGPT</a>
+                <a href="#deepseek" class="nav-item nav-deepseek">🔍 DeepSeek</a>
+                <a href="#nosort" class="nav-item nav-nosort">📈 NoSort</a>
+                <a href="#withsort" class="nav-item nav-withsort">📊 WithSort</a>
+                <a href="#summary" class="nav-item nav-summary">⚖️ ตารางเปรียบเทียบ</a>
+            </div>
+
+            <!-- 1. Claude -->
+            <div class="ai-doc-card claude" id="claude">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>🤖 1. Claude</span>
+                        <span class="badge" style="background:#FF6B6B; color:#fff;">Pattern + Multi-Signal</span>
+                    </div>
+                    <div class="card-meta">Claude/candleAnalyzerClaude.php</div>
+                </div>
+                <div class="card-body">
+                    <div class="section-title">💡 แนวคิดหลัก (Core Concept)</div>
+                    <div class="highlight-box">
+                        <strong>Pattern Recognition & Signal Consensus:</strong> ใช้วิธีรวบรวมคะแนนโหวตระหว่างสัญญาณฝั่งกระทิง (Bullish) และฝั่งหมี (Bearish) จาก 4 มิติ เพื่อหาความน่าจะเป็นสุทธิ
+                    </div>
+
+                    <div class="section-title">⚙️ 4 ปัจจัยที่ใช้คำนวณ</div>
+                    <ul class="rule-list">
+                        <li>
+                            <span class="badge badge-info">1. Patterns</span>
+                            <div>
+                                <strong>Candlestick Patterns:</strong> ตรวจสอบรูปแบบแท่งเทียนแท่งล่าสุด<br>
+                                • <span style="color:#28a745;">+Bullish:</span> Hammer, Morning Star, Bullish Engulfing, Piercing Line<br>
+                                • <span style="color:#dc3545;">+Bearish:</span> Shooting Star, Hanging Man, Evening Star, Bearish Engulfing
+                            </div>
+                        </li>
+                        <li>
+                            <span class="badge badge-info">2. EMA</span>
+                            <div>
+                                <strong>EMA3 & EMA5:</strong><br>
+                                • ถ้า <code>EMA(3) > EMA(5)</code> ➔ +Bullish | อื่นๆ ➔ +Bearish<br>
+                                • ถ้า <code>Close > EMA(3)</code> ➔ +Bullish | อื่นๆ ➔ +Bearish
+                            </div>
+                        </li>
+                        <li>
+                            <span class="badge badge-info">3. Bollinger</span>
+                            <div>
+                                <strong>Bollinger Bands (20, 2):</strong><br>
+                                • <em>Overbought / Oversold:</em> ถ้า <code>Close &lt; Lower Band</code> ➔ +Bullish (มองการเด้ง Reversal) | ถ้า <code>Close &gt; Upper Band</code> ➔ +Bearish<br>
+                                • <em>Mean Reversion:</em> ถ้า <code>Close &gt; Middle Band</code> ➔ +Bearish (แรงดึงกลับ) | ถ้า <code>Close &lt; Middle Band</code> ➔ +Bullish
+                            </div>
+                        </li>
+                        <li>
+                            <span class="badge badge-info">4. Trend</span>
+                            <div>
+                                <strong>Overall Trend (10 Bars):</strong> นับจำนวนแท่งเขียวเทียบแท่งแดง 10 แท่งล่าสุด<br>
+                                • ถ้าแท่งเขียวมากกว่า ➔ +Bullish | ถ้าน้อยกว่า ➔ +Bearish
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div class="section-title">📐 สูตรการตัดสินใจ (Decision Rule)</div>
+                    <div class="formula-box">
+                        Bullish% = (BullishSignals / TotalSignals) × 100<br>
+                        Bearish% = (BearishSignals / TotalSignals) × 100
+                    </div>
+                    <div class="action-decision">
+                        <span>ผลลัพธ์:</span>
+                        <span class="decision-tag decision-green">🟢 Green (CALL) เมื่อ Bullish% > Bearish%</span>
+                        <span class="decision-tag decision-red">🔴 Red (PUT) เมื่อ Bearish% >= Bullish%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. ChatGPT -->
+            <div class="ai-doc-card chatgpt" id="chatgpt">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>💬 2. ChatGPT</span>
+                        <span class="badge" style="background:#51CF66; color:#fff;">Momentum Score Adjustment</span>
+                    </div>
+                    <div class="card-meta">Chatgpt/candleAnalyzerChatGPT.php</div>
+                </div>
+                <div class="card-body">
+                    <div class="section-title">💡 แนวคิดหลัก (Core Concept)</div>
+                    <div class="highlight-box">
+                        <strong>Technical Momentum Scoring:</strong> เริ่มต้นด้วยความน่าจะเป็นเท่ากันที่ <strong>Base 50% Green / 50% Red</strong> จากนั้นนำอินดิเคเตอร์เชิงโมเมนตัมมาปรับเพิ่ม/ลดความน่าจะเป็น
+                    </div>
+
+                    <div class="section-title">⚙️ กฎการปรับคะแนน (predictNextCandle)</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>อินดิเคเตอร์</th>
+                                <th>เงื่อนไข</th>
+                                <th>การปรับคะแนนความน่าจะเป็น</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>RSI (14)</strong></td>
+                                <td>RSI &gt; 70 (Overbought)<br>RSI &lt; 30 (Oversold)</td>
+                                <td><span class="badge badge-red">Red +20%</span> / Green -20%<br><span class="badge badge-green">Green +20%</span> / Red -20%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>MACD (12, 26, 9)</strong></td>
+                                <td>MACD Line &gt; 0<br>MACD Line &lt;= 0</td>
+                                <td><span class="badge badge-green">Green +15%</span> / Red -15%<br><span class="badge badge-red">Red +15%</span> / Green -15%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Stochastic RSI (14)</strong></td>
+                                <td>Stoch RSI &gt; 80<br>Stoch RSI &lt; 20</td>
+                                <td><span class="badge badge-red">Red +10%</span> / Green -10%<br><span class="badge badge-green">Green +10%</span> / Red -10%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ADX (14)</strong></td>
+                                <td>ADX &gt; 25 (ยืนยันเทรนด์แข็งแรง)</td>
+                                <td><span class="badge badge-info">ขยายแต้มต่อ +10%</span> ให้ฝั่งที่มีน้ำหนักนำอยู่</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="action-decision">
+                        <span>ผลลัพธ์:</span>
+                        <span class="decision-tag decision-green">🟢 Green (CALL) เมื่อ Probability Green > Probability Red</span>
+                        <span class="decision-tag decision-red">🔴 Red (PUT) เมื่อ Probability Red >= Probability Green</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. DeepSeek -->
+            <div class="ai-doc-card deepseek" id="deepseek">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>🔍 3. DeepSeek</span>
+                        <span class="badge" style="background:#339AF0; color:#fff;">Weighted Quantitative Multi-Factor</span>
+                    </div>
+                    <div class="card-meta">DeepSeek/CandlestickAnalyzer_DeepSeek.php</div>
+                </div>
+                <div class="card-body">
+                    <div class="section-title">💡 แนวคิดหลัก (Core Concept)</div>
+                    <div class="highlight-box">
+                        <strong>Weighted Quantitative Scoring:</strong> คำนวณ 7 ปัจจัยสำคัญโดยมีค่าน้ำหนัก (Weight) แต่ละตัวกำกับอย่างชัดเจน รวมเป็น Total Score แล้ว Clamp ไว้ที่ 15% - 85%
+                    </div>
+
+                    <div class="section-title">⚙️ 7 ปัจจัยและค่าน้ำหนัก (Weights)</div>
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>ปัจจัย</th>
+                                <th>น้ำหนัก</th>
+                                <th>เกณฑ์คะแนนย่อย</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>1. Trend Analysis</strong></td>
+                                <td><strong>× 1.5</strong></td>
+                                <td>Strong Uptrend (+1.5), Moderate (+1.0), Strong Downtrend (-1.5), Moderate (-1.0)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>2. Recent 3 Candles</strong></td>
+                                <td><strong>× 0.8</strong></td>
+                                <td>อัตราส่วนสีเขียว/แดง ใน 3 แท่งล่าสุด (-1.0 ถึง +1.0)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>3. Bollinger Bands</strong></td>
+                                <td><strong>× 1.2</strong></td>
+                                <td>Close &lt; Lower (+1.2 Rebound), Close &gt; Upper (-1.2 Rejection)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>4. EMA Crossover</strong></td>
+                                <td><strong>× 1.0</strong></td>
+                                <td>EMA3 ตัดขึ้น EMA5 (+1.2), EMA3 ตัดลง EMA5 (-1.2)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>5. RSI (14)</strong></td>
+                                <td><strong>× 1.3</strong></td>
+                                <td>&lt; 30 (+1.5), &gt; 70 (-1.5), &gt; 50 (+0.5), &lt; 50 (-0.5)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>6. ADX Trend Strength</strong></td>
+                                <td><strong>× 1.1</strong></td>
+                                <td>ถ้า ADX &gt; 25: หากแนวโน้มขึ้น (+1.0), หากแนวโน้มลง (-1.0)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>7. Ichimoku Cloud</strong></td>
+                                <td><strong>× 1.4</strong></td>
+                                <td>Bullish Cross / Above Cloud (+1.5), Below Cloud (-1.5), Inside Cloud (-0.5)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="formula-box">
+                        TotalScore = ( Σ (Factor × Weight) ) × 5<br>
+                        GreenProbability = Clamp(50 + TotalScore, 15%, 85%)<br>
+                        RedProbability = 100 - GreenProbability
+                    </div>
+                    <div class="action-decision">
+                        <span>ผลลัพธ์:</span>
+                        <span class="decision-tag decision-green">🟢 Green (CALL) เมื่อ GreenProbability > RedProbability</span>
+                        <span class="decision-tag decision-red">🔴 Red (PUT) เมื่อ RedProbability >= GreenProbability</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. NoSort -->
+            <div class="ai-doc-card nosort" id="nosort">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>📈 4. NoSort</span>
+                        <span class="badge" style="background:#FAB005; color:#fff;">Sequential Microstructure Rules</span>
+                    </div>
+                    <div class="card-meta">ClsTrade/noSortGetAction.php</div>
+                </div>
+                <div class="card-body">
+                    <div class="section-title">💡 แนวคิดหลัก (Core Concept)</div>
+                    <div class="highlight-box">
+                        <strong>Sequential Rule Engine:</strong> ตรวจสอบเงื่อนไขตามลำดับขั้นตอนธรรมชาติ (Step 1-1, Step 1-2, ...) กว่า 1,700 บรรทัด โดยประเมินจากการเคลื่อนไหวระดับ Pip และทิศทางความชัน EMA3 พื้นฐาน
+                    </div>
+
+                    <div class="section-title">⚙️ กลไกการตรวจสอบ</div>
+                    <ul class="rule-list">
+                        <li>
+                            <span class="badge badge-info">Step 1</span>
+                            <div><strong>ตรวจทิศทาง Slope EMA3:</strong> ถ้าความชันลง (Down) ➔ ตั้งต้นที่ <code>PUT</code> (Red) | ถ้าขึ้น (Up) ➔ ตั้งต้นที่ <code>CALL</code> (Green)</div>
+                        </li>
+                        <li>
+                            <span class="badge badge-info">Step 2</span>
+                            <div><strong>วิเคราะห์ Microstructure:</strong> ตรวจสอบ <code>pipSize</code>, <code>delTapip</code>, อัตราส่วนเนื้อเทียนและไส้เทียน</div>
+                        </li>
+                        <li>
+                            <span class="badge badge-info">Step 3</span>
+                            <div><strong>ตรวจจับการบรรจบ MACD:</strong> พิจารณา <code>MACDHeight</code> และการลู่เข้า/ถ่างออก (Convergence / Divergence)</div>
+                        </li>
+                    </ul>
+
+                    <div class="action-decision">
+                        <span>ผลลัพธ์:</span>
+                        <span class="decision-tag decision-green">🟢 Green เมื่อ Action == 'CALL'</span>
+                        <span class="decision-tag decision-red">🔴 Red เมื่อ Action == 'PUT'</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. WithSort -->
+            <div class="ai-doc-card withsort" id="withsort">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>📊 5. WithSort</span>
+                        <span class="badge" style="background:#AE3EC9; color:#fff;">Sorted Specificity-First Tree</span>
+                    </div>
+                    <div class="card-meta">ClsTrade/sortGetAction.php</div>
+                </div>
+                <div class="card-body">
+                    <div class="section-title">💡 แนวคิดหลัก (Core Concept)</div>
+                    <div class="highlight-box">
+                        <strong>Priority / Specificity-First Decision Tree:</strong> จัดเรียงลำดับเงื่อนไขใหม่ โดยนำ <strong>เคสที่มีเงื่อนไขจำเพาะสูงสุด (7-8 เงื่อนไข) มาตรวจสอบก่อน</strong> เมื่อตรงกับเงื่อนไขใด จะ <strong>Early Exit (ส่งผลลัพธ์ทันที)</strong> ทำให้แพทเทิร์นพิเศษไม่ถูกกฎทั่วไปกลบ
+                    </div>
+
+                    <div class="section-title">⚙️ ลำดับความสำคัญของกฎ (Priority Order)</div>
+                    <ul class="rule-list">
+                        <li>
+                            <span class="badge badge-info">ลำดับ 1: High Specificity (7 เงื่อนไข)</span>
+                            <div>ตรวจประวัติการกลับตัวย้อนหลัง 4 แท่ง (<code>PreviousTurnTypeBack1..4</code>) ร่วมกับ <code>emaConflict</code> (เช่น <code>53G</code>, <code>35R</code>), ความชัน <code>abs(ema3SlopeValue) &lt; 5</code>, และ <code>MACDConvergence</code> ➔ <strong>Return ทันที!</strong></div>
+                        </li>
+                        <li>
+                            <span class="badge badge-info">ลำดับ 2: Medium Specificity (4-6 เงื่อนไข)</span>
+                            <div>ตรวจสอบจุดตัดราคา <code>CutPointType</code> และการยืนยันโมเมนตัม</div>
+                        </li>
+                        <li>
+                            <span class="badge badge-info">ลำดับ 3: General Cases (1-3 เงื่อนไข)</span>
+                            <div>หากไม่ตรงกับเคสพิเศษข้างต้น จึงค่อยใช้เกณฑ์ความชันและทิศทางทั่วไป</div>
+                        </li>
+                    </ul>
+
+                    <div class="action-decision">
+                        <span>ผลลัพธ์:</span>
+                        <span class="decision-tag decision-green">🟢 Green เมื่อ Action == 'CALL'</span>
+                        <span class="decision-tag decision-red">🔴 Red เมื่อ Action == 'PUT'</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Summary Comparison -->
+            <div class="ai-doc-card" id="summary" style="border-left: 6px solid #6c757d;">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>⚖️ 6. ตารางเปรียบเทียบจุดเด่นของแต่ละโมเดล</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>โมเดล</th>
+                                <th>สไตล์การวิเคราะห์</th>
+                                <th>จุดเด่น</th>
+                                <th>สภาวะตลาดที่เหมาะสม</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong style="color:#FF6B6B;">🤖 Claude</strong></td>
+                                <td>Pattern + Indicator Consensus</td>
+                                <td>ตรวจจับรูปแบบกลับตัวร่วมกับกรอบ Bollinger Bands ได้แม่นยำ</td>
+                                <td>Sideway ถึง Swing Trading</td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color:#51CF66;">💬 ChatGPT</strong></td>
+                                <td>Momentum Score Adjustment</td>
+                                <td>ให้น้ำหนักกับ RSI, MACD, Stoch RSI ชัดเจน เลี่ยงจุด Overbought/Oversold</td>
+                                <td>Momentum & Trend Continuation</td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color:#339AF0;">🔍 DeepSeek</strong></td>
+                                <td>Weighted Multi-Factor (7 Factors)</td>
+                                <td>วิเคราะห์ครอบคลุมหลายมิติที่สุด มี Ichimoku Cloud และ ADX กรองเทรนด์</td>
+                                <td>Trend Following & Breakout</td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color:#FAB005;">📈 NoSort</strong></td>
+                                <td>Sequential Microstructure Rules</td>
+                                <td>วิเคราะห์การเคลื่อนที่ระดับ Pip และความชันตามขั้นตอนดั้งเดิม</td>
+                                <td>Micro-movement & Scalping</td>
+                            </tr>
+                            <tr>
+                                <td><strong style="color:#AE3EC9;">📊 WithSort</strong></td>
+                                <td>Sorted Specificity-First Tree</td>
+                                <td>ดักจับแพทเทิร์นจำเพาะสูงที่มีความแม่นยำก่อนหลุดไปเคสทั่วไป</td>
+                                <td>High-probability Pattern Matching</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="doc-footer">
+            Deriv Full Analysis Documentation • เชื่อมโยงกับไฟล์ <code>aiPredict.md</code> และ <code>deriv-full-analysis-v2.html</code>
+        </div>
+    </div>
+
+    <script>
+        function setDocTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('deriv-theme', theme);
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === theme);
+            });
+        }
+
+        // Init theme from localStorage
+        (function() {
+            const saved = localStorage.getItem('deriv-theme') || 'dark';
+            setDocTheme(saved);
+        })();
+    </script>
+</body>
+</html>

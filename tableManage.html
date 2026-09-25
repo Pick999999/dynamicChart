@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Field Mapper</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --bg: #0d1117;
+    --panel: #151b23;
+    --panel-alt: #1c2430;
+    --border: #2a3341;
+    --border-soft: #212a37;
+    --text: #e6edf3;
+    --text-dim: #7d8a9c;
+    --text-dimmer: #566173;
+    --accent: #4fd1c5;
+    --accent-dim: #2a5f59;
+    --accent-2: #f2b866;
+    --danger: #ef7a7a;
+    --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% 0%, rgba(79,209,197,0.06), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(242,184,102,0.05), transparent 45%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding:32px 20px 60px;
+  }
+
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  .hero{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    margin-bottom:6px;
+    flex-wrap:wrap;
+  }
+  .hero .tag{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    color:var(--accent);
+    background:rgba(79,209,197,0.1);
+    border:1px solid rgba(79,209,197,0.3);
+    padding:3px 9px;
+    border-radius:20px;
+    text-transform:uppercase;
+  }
+  h1{
+    font-size:26px;
+    font-weight:800;
+    margin:0;
+    letter-spacing:-0.02em;
+  }
+  .sub{
+    color:var(--text-dim);
+    font-size:14px;
+    margin:6px 0 28px;
+    max-width:640px;
+    line-height:1.6;
+  }
+
+  section.card{
+    background:var(--panel);
+    border:1px solid var(--border-soft);
+    border-radius:14px;
+    padding:20px 22px;
+    margin-bottom:20px;
+  }
+  .card-title{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--text-dimmer);
+    margin:0 0 12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card-title .num{
+    font-family:var(--mono);
+    color:var(--accent-2);
+    background:rgba(242,184,102,0.1);
+    border:1px solid rgba(242,184,102,0.25);
+    border-radius:6px;
+    width:20px;height:20px;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:11px;
+  }
+
+  textarea{
+    width:100%;
+    min-height:130px;
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:10px;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.6;
+    padding:14px 16px;
+    resize:vertical;
+    outline:none;
+  }
+  textarea:focus{border-color:var(--accent);}
+
+  .row{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap;}
+
+  button{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:13px;
+    border-radius:9px;
+    border:1px solid var(--border);
+    background:var(--panel-alt);
+    color:var(--text);
+    padding:9px 16px;
+    cursor:pointer;
+    transition:.15s ease;
+  }
+  button:hover{border-color:var(--accent);color:var(--accent);}
+  button.primary{
+    background:linear-gradient(180deg, rgba(79,209,197,0.18), rgba(79,209,197,0.08));
+    border-color:rgba(79,209,197,0.45);
+    color:var(--accent);
+  }
+  button.primary:hover{background:rgba(79,209,197,0.28);}
+  button:disabled{opacity:.35;cursor:not-allowed;}
+  button.ghost{background:transparent;border-color:transparent;color:var(--text-dimmer);padding:6px 8px;font-size:12px;}
+  button.ghost:hover{color:var(--danger);}
+
+  #errBox{
+    display:none;
+    margin-top:10px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--danger);
+    background:rgba(239,122,122,0.08);
+    border:1px solid rgba(239,122,122,0.3);
+    border-radius:8px;
+    padding:8px 12px;
+  }
+
+  /* two-column board */
+  .board{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+  }
+  @media (max-width:760px){
+    .board{grid-template-columns:1fr;}
+  }
+
+  .panel{
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:12px;
+    min-height:340px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .panel-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 16px;
+    border-bottom:1px solid var(--border);
+    background:rgba(255,255,255,0.015);
+  }
+  .panel-head .label{
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    display:flex;align-items:center;gap:8px;
+  }
+  .panel-head .count{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-dimmer);
+  }
+  .panel-head .dot{width:7px;height:7px;border-radius:50%;}
+  .panel-a .dot{background:var(--accent-2);}
+  .panel-b .dot{background:var(--accent);}
+
+  .panel-body{
+    flex:1;
+    padding:10px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    overflow-y:auto;
+    max-height:420px;
+  }
+  .empty-hint{
+    color:var(--text-dimmer);
+    font-size:12.5px;
+    font-family:var(--mono);
+    text-align:center;
+    padding:30px 10px;
+    border:1px dashed var(--border);
+    border-radius:8px;
+  }
+
+  .field-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--panel);
+    border:1px solid var(--border-soft);
+    border-radius:8px;
+    padding:9px 12px;
+    font-family:var(--mono);
+    font-size:13px;
+  }
+  .field-item:hover{border-color:var(--border);}
+  .field-item input[type=checkbox]{
+    accent-color:var(--accent-2);
+    width:15px;height:15px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .field-item .fname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* box B draggable items */
+  .field-item.b-item{
+    cursor:grab;
+    border-color:rgba(79,209,197,0.2);
+  }
+  .field-item.b-item.dragging{opacity:.4;}
+  .field-item.b-item.drag-over{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+  .b-item .idx{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--accent-2);
+    background:rgba(242,184,102,0.1);
+    border:1px solid rgba(242,184,102,0.25);
+    border-radius:5px;
+    width:22px;height:20px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .b-item .handle{color:var(--text-dimmer);flex-shrink:0;letter-spacing:-2px;font-size:14px;}
+  .b-item .remove{
+    background:none;border:none;color:var(--text-dimmer);
+    cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;flex-shrink:0;
+  }
+  .b-item .remove:hover{color:var(--danger);}
+
+  .mid-actions{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+
+  .board-wrap{position:relative;}
+  .move-btn-row{
+    display:flex;justify-content:center;margin:14px 0;
+  }
+  #moveBtn{
+    font-family:var(--mono);
+    font-size:13px;
+    padding:10px 22px;
+  }
+
+  pre#jsonOut{
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--accent);
+    background:var(--panel-alt);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 18px;
+    margin:0;
+    overflow-x:auto;
+    line-height:1.6;
+  }
+  .out-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <span class="tag">JSON • field mapper</span>
+  </div>
+  <h1>ตัวจัดลำดับฟิลด์จาก JSON</h1>
+  <p class="sub">วาง JSON ลงในกล่องด้านล่าง ระบบจะดึงชื่อฟิลด์ทั้งหมดออกมาเป็นรายการ ติ๊กเลือกฟิลด์ที่ต้องการแล้วกด "ย้ายฟิลด์ที่เลือก" เพื่อส่งไปกล่อง B จากนั้นลากสลับตำแหน่งในกล่อง B เพื่อกำหนดลำดับ และดูผลลัพธ์เป็น JSON array ด้านล่าง</p>
+
+  <section class="card">
+    <p class="card-title"><span class="num">1</span>วาง JSON ต้นฉบับ</p>
+    <textarea id="jsonInput">[
+  {
+    "id": 1,
+    "name": "Somchai",
+    "email": "somchai@example.com",
+    "age": 29,
+    "address": "Bangkok",
+    "created_at": "2026-01-01"
+  },
+  {
+    "id": 2,
+    "name": "Suda",
+    "email": "suda@example.com",
+    "age": 34,
+    "phone": "081-234-5678"
+  }
+]</textarea>
+    <div class="row">
+      <button class="primary" id="parseBtn">แยกฟิลด์จาก JSON</button>
+      <button class="ghost" id="clearAllBtn" style="color:var(--text-dimmer)">ล้างทั้งหมด</button>
+    </div>
+    <div id="errBox"></div>
+  </section>
+
+  <section class="card">
+    <p class="card-title"><span class="num">2</span>เลือกและจัดลำดับฟิลด์</p>
+
+    <div class="board">
+      <div class="panel panel-a">
+        <div class="panel-head">
+          <span class="label"><span class="dot"></span>กล่อง A — ฟิลด์ทั้งหมด</span>
+          <span class="count" id="countA">0 รายการ</span>
+        </div>
+        <div class="panel-body" id="boxA">
+          <div class="empty-hint">ยังไม่มีฟิลด์ — กด "แยกฟิลด์จาก JSON" ด้านบน</div>
+        </div>
+      </div>
+
+      <div class="panel panel-b">
+        <div class="panel-head">
+          <span class="label"><span class="dot"></span>กล่อง B — ฟิลด์ที่เลือก (ลากเพื่อสลับลำดับ)</span>
+          <span class="count" id="countB">0 รายการ</span>
+        </div>
+        <div class="panel-body" id="boxB">
+          <div class="empty-hint">ยังไม่มีฟิลด์ที่ถูกเลือก</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="move-btn-row">
+      <button class="primary" id="moveBtn" disabled>ย้ายฟิลด์ที่เลือก →</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="out-head">
+      <p class="card-title" style="margin:0"><span class="num">3</span>ผลลัพธ์ JSON array ตามลำดับ</p>
+      <button class="ghost" id="copyBtn" style="color:var(--text-dim)">คัดลอก</button>
+    </div>
+    <pre id="jsonOut">[]</pre>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  const jsonInput = document.getElementById('jsonInput');
+  const parseBtn = document.getElementById('parseBtn');
+  const clearAllBtn = document.getElementById('clearAllBtn');
+  const errBox = document.getElementById('errBox');
+  const boxA = document.getElementById('boxA');
+  const boxB = document.getElementById('boxB');
+  const countA = document.getElementById('countA');
+  const countB = document.getElementById('countB');
+  const moveBtn = document.getElementById('moveBtn');
+  const jsonOut = document.getElementById('jsonOut');
+  const copyBtn = document.getElementById('copyBtn');
+
+  let fieldsA = [];   // available fields (not yet selected)
+  let fieldsB = [];   // selected fields, in chosen order
+  let dragSrcIndex = null;
+
+  function showError(msg){
+    if(!msg){ errBox.style.display='none'; errBox.textContent=''; return; }
+    errBox.style.display='block';
+    errBox.textContent = msg;
+  }
+
+  function extractFields(raw){
+    let data;
+    try{
+      data = JSON.parse(raw);
+    }catch(e){
+      throw new Error('JSON ไม่ถูกต้อง: ' + e.message);
+    }
+    const seen = new Set();
+    const fields = [];
+    function addKeys(obj){
+      Object.keys(obj).forEach(k=>{
+        if(!seen.has(k)){ seen.add(k); fields.push(k); }
+      });
+    }
+    if(Array.isArray(data)){
+      if(data.length === 0) throw new Error('JSON array ว่างเปล่า ไม่มีฟิลด์ให้แยก');
+      data.forEach(item=>{
+        if(item && typeof item === 'object' && !Array.isArray(item)){
+          addKeys(item);
+        }else{
+          const s = String(item);
+          if(!seen.has(s)){ seen.add(s); fields.push(s); }
+        }
+      });
+    }else if(data && typeof data === 'object'){
+      addKeys(data);
+    }else{
+      throw new Error('รองรับเฉพาะ JSON object หรือ JSON array เท่านั้น');
+    }
+    return fields;
+  }
+
+  function renderA(){
+    boxA.innerHTML = '';
+    if(fieldsA.length === 0){
+      boxA.innerHTML = '<div class="empty-hint">ไม่มีฟิลด์เหลือในกล่อง A</div>';
+    }else{
+      fieldsA.forEach((name, i)=>{
+        const item = document.createElement('div');
+        item.className = 'field-item';
+        item.innerHTML = `
+          <input type="checkbox" data-idx="${i}">
+          <span class="fname">${escapeHtml(name)}</span>
+        `;
+        boxA.appendChild(item);
+      });
+    }
+    countA.textContent = fieldsA.length + ' รายการ';
+    updateMoveBtnState();
+  }
+
+  function renderB(){
+    boxB.innerHTML = '';
+    if(fieldsB.length === 0){
+      boxB.innerHTML = '<div class="empty-hint">ยังไม่มีฟิลด์ที่ถูกเลือก</div>';
+    }else{
+      fieldsB.forEach((name, i)=>{
+        const item = document.createElement('div');
+        item.className = 'field-item b-item';
+        item.draggable = true;
+        item.dataset.idx = i;
+        item.innerHTML = `
+          <span class="idx">${String(i+1).padStart(2,'0')}</span>
+          <span class="handle">⋮⋮</span>
+          <span class="fname">${escapeHtml(name)}</span>
+          <button class="remove" title="นำกลับไปกล่อง A" data-remove="${i}">&times;</button>
+        `;
+        boxB.appendChild(item);
+      });
+    }
+    countB.textContent = fieldsB.length + ' รายการ';
+    updateOutput();
+  }
+
+  function updateMoveBtnState(){
+    const anyChecked = boxA.querySelectorAll('input[type=checkbox]:checked').length > 0;
+    moveBtn.disabled = !anyChecked;
+  }
+
+  function updateOutput(){
+    jsonOut.textContent = JSON.stringify(fieldsB, null, 2);
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // parse button
+  parseBtn.addEventListener('click', ()=>{
+    showError(null);
+    try{
+      const fields = extractFields(jsonInput.value);
+      fieldsA = fields.filter(f => !fieldsB.includes(f));
+      renderA();
+      renderB();
+    }catch(e){
+      showError(e.message);
+    }
+  });
+
+  clearAllBtn.addEventListener('click', ()=>{
+    fieldsA = [];
+    fieldsB = [];
+    showError(null);
+    renderA();
+    renderB();
+  });
+
+  // checkbox change -> enable/disable move button
+  boxA.addEventListener('change', (e)=>{
+    if(e.target.matches('input[type=checkbox]')) updateMoveBtnState();
+  });
+
+  // move checked fields from A to B
+  moveBtn.addEventListener('click', ()=>{
+    const checkedIdx = Array.from(boxA.querySelectorAll('input[type=checkbox]:checked'))
+      .map(cb => parseInt(cb.dataset.idx,10));
+    if(checkedIdx.length === 0) return;
+    const toMove = checkedIdx.map(i => fieldsA[i]);
+    fieldsA = fieldsA.filter((_, i) => !checkedIdx.includes(i));
+    fieldsB = fieldsB.concat(toMove);
+    renderA();
+    renderB();
+  });
+
+  // remove from B back to A
+  boxB.addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-remove]');
+    if(!btn) return;
+    const idx = parseInt(btn.dataset.remove,10);
+    const [name] = fieldsB.splice(idx,1);
+    fieldsA.push(name);
+    renderA();
+    renderB();
+  });
+
+  // drag and drop reorder within box B
+  boxB.addEventListener('dragstart', (e)=>{
+    const item = e.target.closest('.b-item');
+    if(!item) return;
+    dragSrcIndex = parseInt(item.dataset.idx,10);
+    item.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(dragSrcIndex));
+  });
+
+  boxB.addEventListener('dragend', (e)=>{
+    const item = e.target.closest('.b-item');
+    if(item) item.classList.remove('dragging');
+    boxB.querySelectorAll('.b-item').forEach(el=>el.classList.remove('drag-over'));
+    dragSrcIndex = null;
+  });
+
+  boxB.addEventListener('dragover', (e)=>{
+    e.preventDefault();
+    const item = e.target.closest('.b-item');
+    if(!item) return;
+    e.dataTransfer.dropEffect = 'move';
+    boxB.querySelectorAll('.b-item').forEach(el=>el.classList.remove('drag-over'));
+    item.classList.add('drag-over');
+  });
+
+  boxB.addEventListener('drop', (e)=>{
+    e.preventDefault();
+    const item = e.target.closest('.b-item');
+    if(!item || dragSrcIndex === null) return;
+    const targetIdx = parseInt(item.dataset.idx,10);
+    if(targetIdx === dragSrcIndex) return;
+    const [moved] = fieldsB.splice(dragSrcIndex,1);
+    fieldsB.splice(targetIdx,0,moved);
+    renderA();
+    renderB();
+  });
+
+  // copy JSON output
+  copyBtn.addEventListener('click', ()=>{
+    navigator.clipboard.writeText(jsonOut.textContent).then(()=>{
+      const orig = copyBtn.textContent;
+      copyBtn.textContent = 'คัดลอกแล้ว';
+      setTimeout(()=>{ copyBtn.textContent = orig; }, 1200);
+    });
+  });
+
+  // initial render (empty state)
+  renderA();
+  renderB();
+})();
+</script>
+</body>
+</html>

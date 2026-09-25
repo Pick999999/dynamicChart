@@ -1,0 +1,657 @@
+#TITLE=trade
+sss
+#T=max
+const maxLossContinue = Math.max(...array999.map(obj => obj.LossContinue));
+
+const maxIndices = array.reduce((indices, obj, i) => {
+  if (obj.LossContinue === maxLossContinue) indices.push(i);
+  return indices;
+}, []);
+#T=ify
+JSON.stringify(^!);
+#T=ajax2
+<script src="https://thepapers.in/deriv/AjaxUtil.js" ></script> 
+<script>
+function processB(data) {
+    console.log(data);
+}
+
+async function main() {
+  const url = 'testAjax.php';
+  const userData = {
+      Mode  : 'John Doe',
+      email : 'john@example.com',
+      age: 30
+  };
+  
+  try {
+    const data = await fetchData(url,userData);
+    processB(data);
+  } catch (error) {
+    console.error('Error in main:', error);
+  }
+} // end func main
+</script>
+#T=stri
+JSON.stringify(tradeResults, null, 2);
+#T=al
+alert('998989');
+#T=sif
+let message = age >= 18 ? "Adult" : "Minor";
+#T=map
+let data = [
+    { id: 1, name: "Alice", age: 25 },
+    { id: 2, name: "Bob", age: 30 },
+    { id: 3, name: "Charlie", age: 35 }
+];
+
+// อัปเดตอายุของ Bob เป็น 31
+let updatedData = data.map(item => {
+    if (item.name === "Bob") {
+        return { ...item, age: 31 }; // สร้าง object ใหม่โดยคัดลอก properties เดิมและอัปเดต age
+    }
+    return item; // คืนค่า object เดิมหากไม่ตรงเงื่อนไข
+});
+
+#T=filter
+const myArray = [
+  { id: 1, name: "John" },
+  { id: 2, name: "Jane" },
+  { id: 3, name: "Peter" },
+  { id: 4, name: "John" }
+];
+const result = myArray.filter(object => object.name === "John");
+
+#T=repl
+/*backslash*/
+tooltip.innerHTML = tooltipText.replace(/\n/g, '<br>');
+/*string*/
+let newStr = str.replace(/Hello/g, "Goodbye");
+#T=tick
+`^!Element with id "${this.containerId}" not found.`
+#T=trade
+ // ส่งคำสั่งซื้อ Multipliers
+        ws.send(JSON.stringify({
+            "buy": 1,
+            "parameters": {
+                "symbol": "frxEURUSD", // สัญลักษณ์ EUR/USD
+                "amount": 10, // จำนวนเงินลงทุน
+                "multiplier": 200, // ค่า leverage หรือ multiplier
+                "stop_loss": 5, // ระบุ stop loss
+                "take_profit": 10, // ระบุ take profit
+                "currency": "USD" // สกุลเงินที่ใช้เทรด
+            }
+}));
+// หรือ แบบอื่นๆ 
+ ws.send(JSON.stringify({
+                "buy": 1,
+                "price": 10, // ราคาที่จะลงทุน
+                "parameters": {
+                    "contract_type": "CALL", // ประเภทของสัญญา
+                    "symbol": "frxEURUSD", // สัญลักษณ์การเทรด (EUR/USD)
+                    "duration": 5, // ระยะเวลา
+                    "duration_unit": "m", // หน่วยเวลา (m = นาที, h = ชั่วโมง)
+                    "currency": "USD"
+                }
+ }));
+ /*
+ ประเภทของ contract_type:
+นี่คือรายการประเภท contract_type ที่สามารถใช้ได้:
+
+CALL: สัญญาที่คาดว่าราคาจะเพิ่มขึ้น (ซื้อขึ้น)
+PUT: สัญญาที่คาดว่าราคาจะลดลง (ขายลง)
+DIGITOVER: สัญญาที่คาดว่าหมายเลขสุดท้ายของราคาจะมากกว่าค่าที่ระบุ
+DIGITUNDER: สัญญาที่คาดว่าหมายเลขสุดท้ายของราคาจะน้อยกว่าค่าที่ระบุ
+DIGITMATCH: สัญญาที่คาดว่าหมายเลขสุดท้ายของราคาจะตรงกับค่าที่ระบุ
+DIGITDIFF: สัญญาที่คาดว่าหมายเลขสุดท้ายของราคาจะไม่ตรงกับค่าที่ระบุ
+ASIANU: สัญญาที่คาดว่าราคาเฉลี่ยจะเพิ่มขึ้น (สำหรับตลาดเอเชีย)
+ASIAND: สัญญาที่คาดว่าราคาเฉลี่ยจะลดลง (สำหรับตลาดเอเชีย)
+EXPIRYRANGE: สัญญาที่คาดว่าราคาสุดท้ายจะอยู่ในช่วงที่กำหนด
+EXPIRYMISS: สัญญาที่คาดว่าราคาสุดท้ายจะอยู่นอกช่วงที่กำหนด
+RANGE: สัญญาที่คาดว่าราคาจะเคลื่อนไหวในช่วงที่กำหนด
+UPORDOWN: สัญญาที่คาดว่าราคาจะเคลื่อนที่สูงกว่าหรือต่ำกว่าระดับที่กำหนด
+ONETOUCH: สัญญาที่คาดว่าราคาจะสัมผัสระดับที่กำหนดครั้งเดียว
+NOTOUCH: สัญญาที่คาดว่าราคาจะไม่สัมผัสระดับที่กำหนด
+ */
+#T=createws
+let chart, candleSeries, ema3Series, ema5Series, emaLongSeries;
+let ws = null;
+let tooltipEnabled = true;
+let realTimeEnabled = false;
+let selectedCandle = null;
+let candleData = [];
+		
+let ema3Data = [], ema5Data = [];
+let ema3Values = [], ema5Values = []; emaLongValues = [];
+let markersLoss = [] ;
+let labResult = null ;
+let conflictData =  null; 
+let mixedData = null ;
+const ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=YOUR_APP_ID');
+
+ws.onopen = () => {
+    // Authorize ด้วย API Token
+    ws.send(JSON.stringify({
+        "authorize": "YOUR_API_TOKEN"
+    }));
+};
+
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.time) {
+        updateServerTime(data.time);
+    }
+
+    if (data.msg_type === 'authorize') {
+        console.log('Authorized successfully.');
+
+        // ดึงรายการสถานะที่เปิดอยู่ (Active Multipliers Contracts)
+        ws.send(JSON.stringify({
+            "portfolio": 1
+        }));
+    }
+    if (data.msg_type === 'candles') {
+        
+    }
+    
+    // ตอบกลับ proposal โดยเข้า Buy  ได้จาก PlaceTradeProposal
+    if (data.proposal) {
+       // ตัวอย่าง: proposal.proposal.id หรือ data.proposal.id (ขึ้นกับ response)
+       const proposalId = data.proposal.proposal?.id || data.proposal.id;
+       const askPrice = data.proposal.proposal?.ask_price || data.proposal.ask_price;       
+       PlaceBuyOrder(proposalId) ;
+     }
+
+     // จัดการผลลัพธ์การซื้อ / เปิด Order ที่ขอเปิดไปแล้ว   (มี contract_id)
+     if (data.buy) {
+         console.log("Bought contract:", data.buy.contract_id);
+	 document.getElementById("ContractList").innerHTML = data.buy.contract_id;
+	 // ทำการ TrackOrder โดย ร้องขอ data.proposal_open_contract
+	 thisContractID = data.buy.contract_id ;
+	 getTrackOrder(thisContractID) ;
+     }
+     
+     // รายการ Order ที่ถูก Track ไปแล้ว 
+     if (data.proposal_open_contract) {
+        alert('Yes')  ;
+        const contractList = data.proposal_open_contract;                  
+	entry_tick = contractList.entry_tick ;
+	
+     } 
+
+     // เกิดเมื่อส่งคำสั่งขาย Sale ไป  และรอ สถานะ การขายได้ 
+     if (data.msg_type === 'sell') {
+        // ผลลัพธ์จากคำสั่งปิดสถานะ
+        console.log('Sell response:', data);
+     } else {
+        console.log('Received message:', data);
+     }
+			}
+
+
+
+    // รายการเทรดที่เปิดอยู่ 
+    if (data.msg_type === 'portfolio') {
+        console.log('Active contracts:', data);
+
+        if (data.portfolio && data.portfolio.contracts.length > 0) {
+            // ปิดสถานะ Multipliers Order ตัวแรก
+            const contractId = data.portfolio.contracts[0].contract_id; // เลือก contract_id ตัวแรก
+            console.log('Closing contract with ID:', contractId);
+
+            ws.send(JSON.stringify({
+                "sell": contractId,
+                "price": 0 // ปิดสถานะที่ราคาตลาดปัจจุบัน
+            }));
+        } else {
+            console.log('No active contracts to close.');
+        }
+     } 
+     
+
+ws.onerror = (error) => {
+    console.error('WebSocket Error:', error);
+};
+
+
+function subscribeToTime() {
+   if (timeSubscription) {
+      clearInterval(timeSubscription);
+   }
+
+   websocket.send(JSON.stringify({
+      "time": 1
+   }));
+   timeSubscription = setInterval(() => {
+      if (websocket && websocket.readyState === WebSocket.OPEN) {
+         websocket.send(JSON.stringify({
+            "time": 1
+         }));
+      }
+   }, 1000);
+}
+function updateServerTime(timestamp) {
+
+   const date = new Date(timestamp * 1000);
+   const timeStr = date.toLocaleTimeString();
+   document.getElementById('serverTime').textContent = timeStr;
+
+   if (date.getSeconds() === 0) {
+      fetchCandles();
+   }
+}
+
+// ร้องขอ Proposal ก่อนทำการ Buy
+function PlaceTradeProposal(action) {
+
+			 amount = 30 ;
+			 contractType = action ;	
+			 tradeGranuSelected0 = document.getElementById("tradeGranu").value ;
+			 tradeGranuSelected = tradeGranuSelected0.split('-');
+
+             console.log('tradeGranuSelected',tradeGranuSelected) ;
+			
+                
+			 duration = tradeGranuSelected[0] ;
+			 durationUnit = tradeGranuSelected[1] ;
+
+			 //symbol = document.getElementById("assetSelect").value ;
+             symbol = document.getElementById("SymBols").value ;
+			 amount = document.getElementById("moneyTrade").value  ;
+			 
+
+			 const proposalReq = {
+             buy: 1,
+             price: parseFloat(amount),
+             parameters: {
+               amount: parseFloat(amount),
+               basis: "stake",
+               contract_type: contractType,
+               currency: "USD",
+               duration: parseInt(duration),
+               duration_unit: durationUnit,
+               symbol: symbol
+             }
+            };
+            ws.send(JSON.stringify(proposalReq));
+         
+		
+} // end func
+
+// เข้า Buy ซื้อทันทีที่ได้ proposal->data.buy
+function PlaceBuyOrder(proposalId)  {
+
+       if (proposalId) {
+          ws.send(JSON.stringify({ buy: proposalId }));
+       }
+}
+
+function getTrackOrder(thisContractID) {
+
+         ws.send(JSON.stringify( { 
+	   proposal_open_contract: 1, 
+	   contract_id: thisContractID, 
+         }));
+		
+} // end func
+
+function sellContract(contractId) {
+			/*
+            if (!confirm(`คุณต้องการขาย Contract ID: ${contractId} หรือไม่?`)) {
+                return;
+            }
+			*/
+
+            const sellRequest = {
+                sell: contractId,
+                price: 0
+            };
+
+            ws.send(JSON.stringify(sellRequest));
+
+			thisid = 'message_' + contractId ;
+			document.getElementById(thisid).innerHTML = 'ส่งคำสั่งขาย Contract แล้ว';
+			
+            //alert('ส่งคำสั่งขาย Contract แล้ว');
+}
+
+#T=tick2
+`wss://ws.binaryws.com/websockets/v3?app_id=${appId}`;
+#TITLE=$
+${^!}
+
+
+#T=csl
+ console.log(^!)
+
+#T=docready
+$(document).ready(function () {
+  console.log("Hello World!");
+});
+document.addEventListener('DOMContentLoaded', function() {
+    // โค้ดที่ต้องการให้ทำงานเมื่อ DOM โหลดเสร็จ
+    console.log('DOM fully loaded and parsed');
+});
+
+#T=fnc
+function ^!() {
+
+
+} // end func
+
+#T=gv
+document.getElementById("^!").value = '';
+#T=gi
+document.getElementById("^!").innerHTML = '';
+
+#T=ajax
+async function doAjax^!(args,sTypeCode,sPageNo) {
+
+    let result ;
+    let ajaxurl = 'AjaxGetData.php';
+    let data = { "Mode": args ,
+    "typecode" : sTypeCode,
+    "pageno" : sPageNo
+    } ;
+    data2 = JSON.stringify(data);
+	//alert(data2);
+    try {
+        result = await $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+	    dataType: "json",
+            data: data2,
+	    success: function(data, textStatus, jqXHR){
+              console.log(textStatus + ": " + jqXHR.status);
+              // do something with data
+            },
+            error: function(jqXHR, textStatus, errorThrown){
+			  alert(textStatus + ": " + jqXHR.status + " " + errorThrown);	 
+              console.log(textStatus + ": " + jqXHR.status + " " + errorThrown);
+            }
+        });
+        //alert(result);
+		document.getElementById("mainBoxAsset").innerHTML = result ;
+		hideWatingScreen();
+        return result;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+#T=if
+if (^!) {
+}
+#T=while
+while (^!) {
+}
+#T=for
+for (let i=0;i<=^!.length-1 ;i++ ) {
+
+}
+#T=ajaxthen
+// ตัวอย่างที่ 1: ใช้ Fetch API แบบต่อเนื่อง
+fetch('https://api.example.com/user')
+  .then(response => response.json())
+  .then(userData => {
+    console.log('ข้อมูลผู้ใช้:', userData);
+    // เรียก API ที่สองโดยใช้ข้อมูลจาก API แรก
+    return fetch(`https://api.example.com/orders/${userData.id}`);
+  })
+  .then(response => response.json())
+  .then(orderData => {
+    console.log('ข้อมูลการสั่งซื้อ:', orderData);
+  })
+  .catch(error => {
+    console.error('เกิดข้อผิดพลาด:', error);
+  });
+
+// ตัวอย่างที่ 2: สร้างฟังก์ชันแยกเพื่อความชัดเจน
+function getUser() {
+  return fetch('https://api.example.com/user')
+    .then(response => response.json());
+}
+
+function getOrders(userId) {
+  return fetch(`https://api.example.com/orders/${userId}`)
+    .then(response => response.json());
+}
+
+// เรียกใช้งานฟังก์ชันแบบต่อเนื่อง
+getUser()
+  .then(user => {
+    console.log('ข้อมูลผู้ใช้:', user);
+    return getOrders(user.id);
+  })
+  .then(orders => {
+    console.log('ข้อมูลการสั่งซื้อ:', orders);
+  })
+  .catch(error => {
+    console.error('เกิดข้อผิดพลาด:', error);
+  });
+
+// ตัวอย่างที่ 3: การส่ง POST request แบบต่อเนื่อง
+function createUser(userData) {
+  return fetch('https://api.example.com/users', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(userData)
+  })
+  .then(response => response.json());
+}
+
+function createOrder(userId, orderData) {
+  return fetch('https://api.example.com/orders', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ ...orderData, userId })
+  })
+  .then(response => response.json());
+}
+
+// เรียกใช้งาน POST requests แบบต่อเนื่อง
+const newUser = {
+  name: 'John Doe',
+  email: 'john@example.com'
+};
+
+const newOrder = {
+  items: ['item1', 'item2'],
+  total: 100
+};
+
+createUser(newUser)
+  .then(user => {
+    console.log('สร้างผู้ใช้สำเร็จ:', user);
+    return createOrder(user.id, newOrder);
+  })
+  .then(order => {
+    console.log('สร้างออเดอร์สำเร็จ:', order);
+  })
+  .catch(error => {
+    console.error('เกิดข้อผิดพลาด:', error);
+  });
+
+#T=fetch
+// ฟังก์ชันสำหรับเรียก API ด้วย Fetch
+async function callAPI(url, options = {}) {
+    // กำหนดค่า default options
+    const defaultOptions = {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            // เพิ่ม token สำหรับ authentication (ถ้ามี)
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        // เพิ่ม credentials ถ้าต้องการส่ง cookies
+        credentials: 'include'
+    };
+
+    // รวม options ที่ส่งมากับ default options
+    const fetchOptions = {
+        ...defaultOptions,
+        ...options,
+        headers: {
+            ...defaultOptions.headers,
+            ...options.headers
+        }
+    };
+
+    try {
+        // เริ่มเรียก API
+        console.log(`กำลังเรียก API: ${url}`);
+        const response = await fetch(url, fetchOptions);
+
+        // ตรวจสอบ HTTP status
+        if (!response.ok) {
+            // ถ้า status ไม่ใช่ 2xx จะจัดการ error ตาม status code
+            switch (response.status) {
+                case 400:
+                    throw new Error('ข้อมูลไม่ถูกต้อง');
+                case 401:
+                    throw new Error('ไม่ได้รับอนุญาต กรุณาเข้าสู่ระบบใหม่');
+                case 403:
+                    throw new Error('ไม่มีสิทธิ์เข้าถึง');
+                case 404:
+                    throw new Error('ไม่พบข้อมูลที่ต้องการ');
+                case 500:
+                    throw new Error('เซิร์ฟเวอร์ผิดพลาด');
+                default:
+                    throw new Error(`เกิดข้อผิดพลาด: ${response.status}`);
+            }
+        }
+
+        // แปลงข้อมูลเป็น JSON
+        const data = await response.json();
+        return data;
+
+    } catch (error) {
+        // จัดการ error ที่เกิดขึ้น
+        console.error('เกิดข้อผิดพลาด:', error);
+        
+        // ตรวจสอบว่าเป็น network error หรือไม่
+        if (!navigator.onLine) {
+            throw new Error('ไม่มีการเชื่อมต่ออินเทอร์เน็ต');
+        }
+        
+        // ส่งต่อ error ไปให้ส่วนที่เรียกใช้จัดการต่อ
+        throw error;
+    }.
+}
+
+// ตัวอย่างการใช้งาน GET
+try {
+    const data = await callAPI('https://api.example.com/users');
+    console.log('ข้อมูลที่ได้:', data);
+} catch (error) {
+    // แสดง error ให้ผู้ใช้เห็น
+    alert(error.message);
+}
+
+// ตัวอย่างการใช้งาน POST
+try {
+    const newUser = {
+        name: 'John Doe',
+        email: 'john@example.com'
+    };
+    
+    const data = await callAPI('https://api.example.com/users', {
+        method: 'POST',
+        body: JSON.stringify(newUser)
+    });
+    console.log('สร้างผู้ใช้สำเร็จ:', data);
+} catch (error) {
+    alert(error.message);
+}
+
+// ตัวอย่างการใช้งาน PUT
+try {
+    const updatedUser = {
+        name: 'John Updated',
+        email: 'john.updated@example.com'
+    };
+    
+    const data = await callAPI('https://api.example.com/users/1', {
+        method: 'PUT',
+        body: JSON.stringify(updatedUser)
+    });
+    console.log('อัพเดทผู้ใช้สำเร็จ:', data);
+} catch (error) {
+    alert(error.message);
+}
+
+// ตัวอย่างการใช้งาน DELETE
+try {
+    await callAPI('https://api.example.com/users/1', {
+        method: 'DELETE'
+    });
+    console.log('ลบผู้ใช้สำเร็จ');
+} catch (error) {
+    alert(error.message);
+}
+
+#T=switch
+switch (^!)
+{
+case :
+
+}
+#T=do
+do
+{
+}
+while (^!);
+#T=class
+class ^! {
+   constructor() {
+     
+   }
+}
+#T=try
+try
+{
+	^!
+}
+catch ()
+{
+}
+#T=interface
+interface ^!
+{
+}
+#T=namespace
+namespace ^!
+{
+}
+#
+; C# only
+#T=foreach
+foreach (^!)
+{
+}
+#T=get
+get
+{
+	^!
+}
+#T=set
+set
+{
+	^!
+}
+#T=lock
+lock (^!)
+{
+}
+#T=obj
+sObj =   {
+ name    : value1,
+ sirname : value2
+}
+
+#

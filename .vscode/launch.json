@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Rust: rust_debug_demo (F5)",
+      "cargo": {
+        "args": [
+          "build",
+          "--manifest-path=./rust_debug_demo/Cargo.toml"
+        ],
+        "filter": {
+          "name": "rust_debug_demo",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}/rust_debug_demo"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Rust Tests (rust_debug_demo)",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--manifest-path=./rust_debug_demo/Cargo.toml"
+        ],
+        "filter": {
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}/rust_debug_demo"
+    }
+  ]
+}

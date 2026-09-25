@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Short-Term &amp; Next Candle Action Studio — DynamicChart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070a12;
+      --panel: #0d131f;
+      --panel-2: #141c2e;
+      --card-bg: rgba(13, 19, 31, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.2);
+      --accent: #2dd4bf;
+      --up: #22c55e;
+      --up-bg: rgba(34, 197, 94, 0.15);
+      --down: #ef4444;
+      --down-bg: rgba(239, 68, 68, 0.15);
+      --warn: #f59e0b;
+      --idle: #94a3b8;
+      --idle-bg: rgba(148, 163, 184, 0.12);
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Inter', 'Prompt', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.06) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(45, 212, 191, 0.05) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Topbar */
+    .topbar {
+      height: 56px;
+      background: rgba(13, 19, 31, 0.88);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: 0.02em;
+      color: #fff;
+    }
+    .brand .badge {
+      background: linear-gradient(135deg, #00e5ff, #0088ff);
+      color: #080a0f;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+    .nav-btn.primary {
+      background: linear-gradient(135deg, #06b6d4, #0284c7);
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      box-shadow: 0 2px 10px rgba(6, 182, 212, 0.35);
+    }
+    .nav-btn.primary:hover {
+      background: linear-gradient(135deg, #22d3ee, #0369a1);
+      transform: translateY(-1px);
+    }
+
+    /* Main Container */
+    .container {
+      flex: 1;
+      padding: 24px;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Hero Strategy Control Panel */
+    .hero-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: 16px;
+      padding: 22px 26px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .hero-title h1 {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hero-title p {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      align-items: flex-end;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .field-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field-wrap label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .custom-select, .custom-input {
+      background: #101726;
+      border: 1px solid #233044;
+      color: #f8fafc;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 8px;
+      outline: none;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .custom-select:focus, .custom-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-glow);
+    }
+    .btn-run {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+      transition: all 0.2s;
+      height: 38px;
+    }
+    .btn-run:hover {
+      background: linear-gradient(135deg, #34d399 0%, #047857 100%);
+      transform: translateY(-1px);
+    }
+
+    /* KPI Summary Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .kpi-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .kpi-val {
+      font-size: 22px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: #fff;
+    }
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Strategy Evaluation Table */
+    .table-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .table-header {
+      padding: 14px 20px;
+      background: rgba(15, 23, 42, 0.7);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .table-header h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-pills {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .pill-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pill-btn.active {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      max-height: 520px;
+      background: #090d16;
+    }
+    .eval-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+    .eval-table th {
+      position: sticky;
+      top: 0;
+      background: #111827;
+      color: #94a3b8;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 11.5px;
+      border-bottom: 1px solid #1f2937;
+      z-index: 10;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .eval-table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+    }
+    .eval-table tbody tr:hover {
+      background: rgba(56, 189, 248, 0.03);
+    }
+
+    /* Badges */
+    .badge-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+    .badge-action.call {
+      background: var(--up-bg);
+      color: var(--up);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+    }
+    .badge-action.put {
+      background: var(--down-bg);
+      color: var(--down);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+    }
+    .badge-action.idle {
+      background: var(--idle-bg);
+      color: var(--idle);
+      border: 1px solid #475569;
+    }
+
+    .badge-selected {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+    .badge-selected.y {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    .badge-selected.n {
+      background: rgba(148, 163, 184, 0.1);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .badge-case {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      background: rgba(56, 189, 248, 0.1);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    /* ==========================================================================
+       Case Codes Manager Modal Styles
+       ========================================================================== */
+    .ccm-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(4, 7, 14, 0.82);
+      backdrop-filter: blur(10px);
+      z-index: 100000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .ccm-modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+    .ccm-modal-card {
+      background: #0d131f;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75), 0 0 30px rgba(56, 189, 248, 0.15);
+      border-radius: 16px;
+      width: 95vw;
+      max-width: 1300px;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: scale(0.96);
+      transition: transform 0.25s ease;
+      color: #f1f5f9;
+      font-family: var(--font-sans);
+    }
+    .ccm-modal-overlay.active .ccm-modal-card {
+      transform: scale(1);
+    }
+    .ccm-header {
+      padding: 18px 24px;
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .ccm-title-wrap h3 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.02em;
+    }
+    .ccm-title-wrap p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .ccm-close-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .ccm-close-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: #ef4444;
+      color: #fff;
+    }
+    .ccm-toolbar {
+      padding: 12px 24px;
+      background: #090d16;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ccm-filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .ccm-input {
+      background: #131b2e;
+      border: 1px solid #293548;
+      color: #f8fafc;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .ccm-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+    .ccm-btn-mini {
+      padding: 5px 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      color: #e2e8f0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+    .ccm-btn-mini:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .ccm-table-wrap {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: auto;
+      background: #090d16;
+    }
+    .ccm-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      text-align: left;
+    }
+    .ccm-table th {
+      position: sticky;
+      top: 0;
+      background: #111827;
+      color: #94a3b8;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 11.5px;
+      border-bottom: 1px solid #1f2937;
+      z-index: 10;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .ccm-table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+    }
+    .ccm-table tbody tr:hover {
+      background: rgba(56, 189, 248, 0.04);
+    }
+    .ccm-action-select {
+      background: #141c2e;
+      border: 1px solid #334155;
+      color: #fff;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .ccm-action-select.yes {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: #22c55e;
+      color: #4ade80;
+    }
+    .ccm-action-select.no {
+      background: rgba(148, 163, 184, 0.1);
+      border-color: #475569;
+      color: #94a3b8;
+    }
+    .ccm-desc-input {
+      width: 100%;
+      background: #111827;
+      border: 1px solid #273549;
+      color: #e2e8f0;
+      font-size: 11.5px;
+      padding: 5px 8px;
+      border-radius: 5px;
+      resize: vertical;
+      min-height: 28px;
+      font-family: inherit;
+    }
+    .ccm-desc-input:focus {
+      border-color: #38bdf8;
+      background: #172136;
+      outline: none;
+    }
+    .ccm-footer {
+      padding: 14px 24px;
+      background: #0d131f;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .ccm-stats-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .ccm-stats-badge b {
+      color: #38bdf8;
+    }
+    .ccm-btn-save {
+      background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+      transition: all 0.2s;
+    }
+    .ccm-btn-save:hover {
+      background: linear-gradient(135deg, #38bdf8 0%, #1d4ed8 100%);
+      transform: translateY(-1px);
+    }
+    .ccm-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      border: 1px solid #38bdf8;
+      color: #f8fafc;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      z-index: 100001;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ccm-toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="brand">
+      <span>⚡ Short-Term Action Studio</span>
+      <span class="badge">V5.0</span>
+    </div>
+    <div class="nav-links">
+      <a href="macd.html" class="nav-btn">📊 MACD / Full Chart</a>
+      <a href="caseCodesTable.html" target="_blank" class="nav-btn">📑 27 Case Codes Table</a>
+      <button type="button" class="nav-btn primary" id="openCaseCodesModalBtn">⚙️ จัดการ Case Codes (JSON)</button>
+    </div>
+  </header>
+
+  <!-- Container -->
+  <div class="container">
+    
+    <!-- Hero Strategy Control Panel -->
+    <div class="hero-panel">
+      <div class="hero-top">
+        <div class="hero-title">
+          <h1>🎯 การเลือก Strategy และตรวจสอบ isSelectedToAction</h1>
+          <p>
+            ระบบจะตรวจสอบ <code>case_code</code> ของแต่ละแท่งเทียน: หาก <code>isSelectedToAction === 'y'</code> จึงจะคำนวณหา Action แต่หากเป็น <code>'n'</code> จะกำหนดเป็น <b>Idle (ข้ามการเทรด)</b> ทันที
+          </p>
+        </div>
+        <button type="button" class="nav-btn" onclick="document.getElementById('openCaseCodesModalBtn').click()" style="background:rgba(56,189,248,0.12); color:#38bdf8; border-color:rgba(56,189,248,0.3);">
+          ⚙️ ปรับแต่ง 27 Case Codes
+        </button>
+      </div>
+
+      <div class="controls-grid">
+        <div class="field-wrap">
+          <label for="strategySelect">🎯 กลยุทธ์การหา Action (Strategy)</label>
+          <select id="strategySelect" class="custom-select">
+            <option value="PREDICT_NEXT_CANDLE" selected>🔮 1. Predict Next Candle (Pure Candle / V5 Price Action)</option>
+            <option value="SEQUENCE_2BAR">🔗 2. 2-Bar Sequence Transition Matrix (คู่รหัส 17->1, 6->1, etc.)</option>
+            <option value="V5_TREND_CONFIRM">📈 3. V5 Trend Continuation (UP/DN Confirm + Spikes)</option>
+            <option value="TRAPS_REVERSAL">🪤 4. Pure Traps &amp; Reversal (Bull / Bear Traps + Engulfing)</option>
+            <option value="MOMENTUM_SCORE">⚡ 5. Trend Score &gt;= 40% (Strong Momentum)</option>
+          </select>
+        </div>
+
+        <div class="field-wrap">
+          <label for="assetSelect">📈 สินทรัพย์ทดสอบ (Asset)</label>
+          <select id="assetSelect" class="custom-select">
+            <option value="1HZ10V" selected>Volatility 10 (1s) Index (1HZ10V)</option>
+            <option value="1HZ25V">Volatility 25 (1s) Index (1HZ25V)</option>
+            <option value="1HZ50V">Volatility 50 (1s) Index (1HZ50V)</option>
+            <option value="1HZ75V">Volatility 75 (1s) Index (1HZ75V)</option>
+            <option value="1HZ100V">Volatility 100 (1s) Index (1HZ100V)</option>
+            <option value="R_10">Volatility 10 Index (R_10)</option>
+            <option value="R_50">Volatility 50 Index (R_50)</option>
+            <option value="R_100">Volatility 100 Index (R_100)</option>
+          </select>
+        </div>
+
+        <div class="field-wrap">
+          <label for="candleCountSelect">🕯️ จำนวนแท่งเทียนที่วิเคราะห์</label>
+          <select id="candleCountSelect" class="custom-select">
+            <option value="30">30 แท่งล่าสุด</option>
+            <option value="60" selected>60 แท่งล่าสุด (1 ชั่วโมง)</option>
+            <option value="120">120 แท่งล่าสุด (2 ชั่วโมง)</option>
+            <option value="300">300 แท่งล่าสุด (5 ชั่วโมง)</option>
+          </select>
+        </div>
+
+        <div class="field-wrap" style="justify-content: flex-end;">
+          <button type="button" class="btn-run" id="runStrategyBtn">
+            <span>🚀 ประมวลผล Strategy &amp; กรอง Action</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Metric Summary Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">🕯️ แท่งเทียนทั้งหมด</div>
+        <div class="kpi-val" id="kpiTotalCandles">0</div>
+        <div class="kpi-sub">Total Analyzed Bars</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title" style="color:#4ade80;">✅ อนุญาต Action (Y)</div>
+        <div class="kpi-val" id="kpiSelectedCount" style="color:#4ade80;">0</div>
+        <div class="kpi-sub">isSelectedToAction = y</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title" style="color:#94a3b8;">⚪ บังคับ Idle (N)</div>
+        <div class="kpi-val" id="kpiIdleCount" style="color:#94a3b8;">0</div>
+        <div class="kpi-sub">isSelectedToAction = n (Skipped)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title" style="color:#22c55e;">🟢 สัญญาณ CALL</div>
+        <div class="kpi-val" id="kpiCallCount" style="color:#22c55e;">0</div>
+        <div class="kpi-sub">Action: CALL Triggered</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title" style="color:#ef4444;">🔴 สัญญาณ PUT</div>
+        <div class="kpi-val" id="kpiPutCount" style="color:#ef4444;">0</div>
+        <div class="kpi-sub">Action: PUT Triggered</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title" style="color:#38bdf8;">🛡️ อัตราการกรองข้าม (Idle Rate)</div>
+        <div class="kpi-val" id="kpiFilterRate" style="color:#38bdf8;">0%</div>
+        <div class="kpi-sub">Noise Filter Protection</div>
+      </div>
+    </div>
+
+    <!-- Strategy Evaluation Results Table -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3>📊 ตารางผลลัพธ์การประเมิน Action รายแท่งเทียน (พร้อมสถานะ isSelectedToAction)</h3>
+        <div class="filter-pills">
+          <button type="button" class="pill-btn active" data-filter="ALL">ทั้งหมด</button>
+          <button type="button" class="pill-btn" data-filter="CALL" style="color:#22c55e;">🟢 CALL</button>
+          <button type="button" class="pill-btn" data-filter="PUT" style="color:#ef4444;">🔴 PUT</button>
+          <button type="button" class="pill-btn" data-filter="IDLE" style="color:#94a3b8;">⚪ IDLE (Skipped)</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="eval-table">
+          <thead>
+            <tr>
+              <th style="width: 50px; text-align: center;">#</th>
+              <th style="width: 140px;">เวลา (Time)</th>
+              <th style="width: 130px;">ราคา ปิด (Close)</th>
+              <th style="width: 170px;">Case Code (No.)</th>
+              <th style="width: 110px;">กลุ่ม (Group)</th>
+              <th style="width: 120px; text-align: center;">isSelectedToAction</th>
+              <th style="width: 120px; text-align: center;">Final Action</th>
+              <th>เหตุผลการตัดสินใจ (Decision Reason)</th>
+            </tr>
+          </thead>
+          <tbody id="evalTableBody">
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 40px; color: #64748b;">
+                กดปุ่ม <b>"🚀 ประมวลผล Strategy &amp; กรอง Action"</b> เพื่อเริ่มการวิเคราะห์
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==========================================================================
+       Case Codes Manager Modal Form (JSON Editor for isSelectedToAction)
+       ========================================================================== -->
+  <div id="caseCodesModal" class="ccm-modal-overlay">
+    <div class="ccm-modal-card">
+      <div class="ccm-header">
+        <div class="ccm-title-wrap">
+          <h3>⚙️ ตัวจัดการ Case Codes 27 รูปแบบ (isSelectedToAction Manager)</h3>
+          <p>ตั้งค่าเปิด/ปิด Action (y/n) และแก้ไขคำอธิบาย พร้อมบันทึก JSON ลงทั้ง 2 โฟลเดอร์ในโปรเจกต์อัตโนมัติ</p>
+        </div>
+        <button type="button" class="ccm-close-btn" id="closeCaseCodesModalBtn" title="ปิดหน้าต่าง">✕</button>
+      </div>
+
+      <div class="ccm-toolbar">
+        <div class="ccm-filter-group">
+          <input type="text" id="ccmSearchInput" class="ccm-input" placeholder="🔍 ค้นหารหัส / ชื่อ / คำอธิบาย..." style="min-width: 220px;">
+          <select id="ccmGroupFilter" class="ccm-input">
+            <option value="ALL">🌟 ทุกกลุ่ม (All Groups)</option>
+            <option value="Up">🟢 Up</option>
+            <option value="Down">🔴 Down</option>
+            <option value="Spike">⚡ Spike</option>
+            <option value="Rejected">⚠️ Rejected / Trap</option>
+            <option value="Engulfing">🟦 Engulfing</option>
+            <option value="Sideways">⏸️ Sideways</option>
+            <option value="System">⚙️ System</option>
+          </select>
+          <select id="ccmActionFilter" class="ccm-input">
+            <option value="ALL">🎯 ทุกสถานะ Action (All)</option>
+            <option value="y">✅ เปิด Action (y) เท่านั้น</option>
+            <option value="n">⚪ ปิด Action (n) เท่านั้น</option>
+          </select>
+        </div>
+
+        <div class="ccm-filter-group">
+          <button type="button" class="ccm-btn-mini" id="ccmSetAllYesBtn" title="ตั้งค่าแถวที่แสดงทั้งหมดเป็น Action = y">⚡ เลือกทั้งหมด (Set Y)</button>
+          <button type="button" class="ccm-btn-mini" id="ccmSetAllNoBtn" title="ตั้งค่าแถวที่แสดงทั้งหมดเป็น Action = n">⚪ ยกเลิกทั้งหมด (Set N)</button>
+          <button type="button" class="ccm-btn-mini" id="ccmResetDefaultsBtn" title="รีเซ็ตเป็นค่าเริ่มต้นที่แนะนำ">🎯 ค่าเริ่มต้นที่แนะนำ</button>
+        </div>
+      </div>
+
+      <div class="ccm-table-wrap">
+        <table class="ccm-table">
+          <thead>
+            <tr>
+              <th style="width: 50px; text-align: center;">#</th>
+              <th style="width: 180px;">Case Code</th>
+              <th style="width: 130px;">Group / Trend</th>
+              <th style="width: 90px; text-align: center;">Category</th>
+              <th style="width: 140px; text-align: center;">Action (y / n)</th>
+              <th>คำอธิบายรูปแบบ (Description)</th>
+            </tr>
+          </thead>
+          <tbody id="ccmTableBody">
+            <!-- Dynamic Rows rendered via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="ccm-footer">
+        <div class="ccm-stats-badge" id="ccmStatsBadge">
+          <span>รวม: <b id="ccmTotalCount">27</b> รูปแบบ</span> |
+          <span>✅ เปิด Action: <b id="ccmYesCount" style="color:#4ade80;">0</b></span> |
+          <span>⚪ ปิด Action: <b id="ccmNoCount" style="color:#94a3b8;">0</b></span>
+          <span style="font-size: 11px; color:#64748b; margin-left: 10px;">(📁 บันทึกลง: <code>case_codes.json</code> และ <code>indicator/case_codes.json</code>)</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="ccm-btn-mini" id="ccmReloadBtn" style="padding: 8px 14px;">🔄 โหลดใหม่</button>
+          <button type="button" class="ccm-btn-save" id="ccmSaveBtn">💾 บันทึก JSON ลงทั้ง 2 Folder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ccmToast" class="ccm-toast">✅ บันทึกข้อมูลเรียบร้อยแล้ว</div>
+
+  <!-- Indicator Scripts -->
+  <script src="detectTrend_V5.js"></script>
+  <script src="predictNextCandle.js"></script>
+
+  <script>
+    // ==========================================================================
+    // Strategy Engine & isSelectedToAction Gatekeeper Core Logic
+    // ==========================================================================
+    (function () {
+      var casesMap = {}; // Key: codeNo -> case object
+      var casesCodeMap = {}; // Key: caseCode -> case object
+      var evaluatedResults = [];
+      var activeFilter = 'ALL';
+
+      // Load case_codes.json configuration
+      function loadCaseCodesJson(callback) {
+        fetch('case_codes.json?t=' + Date.now())
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            var list = (data && data.cases) ? data.cases : (Array.isArray(data) ? data : []);
+            casesMap = {};
+            casesCodeMap = {};
+            list.forEach(function (c) {
+              casesMap[c.codeNo] = c;
+              if (c.caseCode) casesCodeMap[c.caseCode] = c;
+              if (c.caseDesc) casesCodeMap[c.caseDesc] = c;
+            });
+            console.log('✅ Loaded ' + list.length + ' case codes into Gatekeeper Map');
+            if (callback) callback();
+          })
+          .catch(function (err) {
+            console.warn('⚠️ Could not fetch case_codes.json, using fallback registry:', err);
+            if (window.TrendDetector && window.TrendDetector.TREND_CASES) {
+              var registry = window.TrendDetector.TREND_CASES;
+              Object.keys(registry).forEach(function (k) {
+                var info = registry[k];
+                var isRec = (info.codeNo >= 1 && info.codeNo <= 6) || info.codeNo === 9 || info.codeNo === 10 || info.codeNo === 11 || info.codeNo === 12;
+                var obj = {
+                  codeNo: info.codeNo,
+                  caseCode: info.caseCode,
+                  caseDesc: k,
+                  group: info.group,
+                  trend: info.trend,
+                  category: info.codeNo <= 20 ? (info.group === 'System' ? 'SYSTEM' : 'CORE') : 'EXTENDED',
+                  isSelectedToAction: isRec ? 'y' : 'n',
+                  description: info.description
+                };
+                casesMap[info.codeNo] = obj;
+                casesCodeMap[info.caseCode] = obj;
+                casesCodeMap[k] = obj;
+              });
+            }
+            if (callback) callback();
+          });
+      }
+
+      // Generate synthetic realistic candles if no backend DB is connected
+      function generateMockCandles(count) {
+        var candles = [];
+        var now = Math.floor(Date.now() / 1000);
+        var basePrice = 1250.0;
+        var trend = 1;
+
+        for (var i = 0; i < count; i++) {
+          if (Math.random() < 0.25) trend = -trend;
+          var change = (Math.random() * 3.5 - 1.6) + (trend * 0.8);
+          var open = basePrice;
+          var close = open + change;
+          var high = Math.max(open, close) + (Math.random() * 1.8);
+          var low = Math.min(open, close) - (Math.random() * 1.8);
+          var isAtr = (high - low) > 3.8;
+
+          candles.push({
+            time: now - ((count - i) * 60),
+            open: Number(open.toFixed(2)),
+            high: Number(high.toFixed(2)),
+            low: Number(low.toFixed(2)),
+            close: Number(close.toFixed(2)),
+            is_atr: isAtr,
+            isAtr: isAtr
+          });
+          basePrice = close;
+        }
+        return candles;
+      }
+
+      /**
+       * 🎯 Main Function: Evaluate Strategy with isSelectedToAction Check
+       * ตรวจสอบว่าแท่งเทียนนั้น isSelectedToAction === 'y' ไหม
+       * - ถ้า isSelectedToAction === 'n' หรือไม่ถูกเลือก -> Action: Idle (ข้าม)
+       * - ถ้า isSelectedToAction === 'y' -> ถึงจะคำนวณหา Action (CALL / PUT / WAIT)
+       */
+      function evaluateCandleWithStrategy(candles, index, strategyType) {
+        var currentCandle = candles[index];
+
+        // 1. ตรวจจับ Case Code จาก detectTrend_V5.js
+        var trendResult = window.TrendDetector ? window.TrendDetector.detectTrend(candles, index) : null;
+        var codeNo = trendResult ? trendResult.codeNo : 20;
+        var caseCode = trendResult ? (trendResult.caseCode || 'SYS-NODATA') : 'SYS-NODATA';
+        var caseGroup = trendResult ? (trendResult.group || 'System') : 'System';
+
+        // 2. ดึงสถานะ isSelectedToAction จาก Config JSON Map
+        var configItem = casesMap[codeNo] || casesCodeMap[caseCode] || null;
+        var isSelected = configItem ? (configItem.isSelectedToAction || 'n') : 'n';
+
+        var finalAction = 'IDLE';
+        var decisionReason = '';
+        var rawStrategyAction = 'WAIT';
+
+        // -------------------------------------------------------------
+        // 🛡️ GATEKEEPER CHECK: ตรวจสอบว่า isSelectedToAction === 'y' ไหม
+        // -------------------------------------------------------------
+        if (isSelected !== 'y') {
+          // ❌ ไม่ถูกเลือก หรือ isSelectedToAction = n -> IDLE
+          finalAction = 'IDLE';
+          decisionReason = '⛔ [IDLE] Case Code [No. ' + codeNo + '] ' + caseCode + ' ถูกตั้งค่า isSelectedToAction = n (ปิดการทำงาน / ไม่ให้เทรด)';
+        } else {
+          // ✅ ถูกเลือก (isSelectedToAction = y) -> ถึงจะเข้าสู่การหา Action ตาม Strategy
+          switch (strategyType) {
+            case 'PREDICT_NEXT_CANDLE':
+              if (window.NextCandlePredictor) {
+                var pred = window.NextCandlePredictor.predictNextCandle(candles, index);
+                rawStrategyAction = pred.expectedAction || 'WAIT';
+                var reasonsStr = (pred.reasons && pred.reasons.length > 0) ? pred.reasons[0] : '';
+                finalAction = rawStrategyAction;
+                decisionReason = '✅ [Action Allowed: Y] ' + rawStrategyAction + ' (ความมั่นใจ ' + pred.confidence + ' / Score ' + pred.score + '%) — ' + reasonsStr;
+              } else {
+                finalAction = trendResult && trendResult.trend === 'UpTrend' ? 'CALL' : (trendResult && trendResult.trend === 'DownTrend' ? 'PUT' : 'IDLE');
+                decisionReason = '✅ [Action Allowed: Y] เทรดตาม V5 Trend: ' + finalAction;
+              }
+              break;
+
+            case 'SEQUENCE_2BAR':
+              if (window.NextCandlePredictor) {
+                var seq = window.NextCandlePredictor.evaluateSequenceAction(candles, index);
+                rawStrategyAction = seq.action || 'WAIT';
+                finalAction = rawStrategyAction;
+                decisionReason = '✅ [Action Allowed: Y] ' + rawStrategyAction + ' | คู่รหัส ' + seq.pairDisplay + ' (' + seq.patternName + ') — ' + seq.reason;
+              }
+              break;
+
+            case 'V5_TREND_CONFIRM':
+              if (caseCode === 'UP-CONFIRM' || caseCode === 'SPK-CONTINUE-UP' || caseCode === 'EG-BULLISH') {
+                finalAction = 'CALL';
+                decisionReason = '✅ [Action Allowed: Y] สัญญาณยืนยันขาขึ้นต่อเนื่อง (' + caseCode + ')';
+              } else if (caseCode === 'DN-CONFIRM' || caseCode === 'SPK-CONTINUE-DN' || caseCode === 'EG-BEARISH') {
+                finalAction = 'PUT';
+                decisionReason = '✅ [Action Allowed: Y] สัญญาณยืนยันขาลงต่อเนื่อง (' + caseCode + ')';
+              } else {
+                finalAction = 'IDLE';
+                decisionReason = '✅ [Action Allowed: Y] ไม่มีสัญญาณ Trend Confirmation ที่ชัดเจน -> IDLE';
+              }
+              break;
+
+            case 'TRAPS_REVERSAL':
+              if (caseCode === 'SPK-BEARTRAP' || caseCode === 'RJ-BEARTRAP-STRONG' || caseCode === 'EG-BULLISH') {
+                finalAction = 'CALL';
+                decisionReason = '✅ [Action Allowed: Y] Bear Trap / Reversal ดีดขึ้น (' + caseCode + ')';
+              } else if (caseCode === 'SPK-BULLTRAP' || caseCode === 'RJ-BULLTRAP-STRONG' || caseCode === 'EG-BEARISH') {
+                finalAction = 'PUT';
+                decisionReason = '✅ [Action Allowed: Y] Bull Trap / Reversal ทุบลง (' + caseCode + ')';
+              } else {
+                finalAction = 'IDLE';
+                decisionReason = '✅ [Action Allowed: Y] ไม่ใช่รูปแบบกับดัก Reversal -> IDLE';
+              }
+              break;
+
+            case 'MOMENTUM_SCORE':
+              var score = (trendResult && typeof trendResult.trendScore === 'number') ? trendResult.trendScore : 0;
+              if (score >= 40) {
+                finalAction = 'CALL';
+                decisionReason = '✅ [Action Allowed: Y] Trend Score สูงมาก (+' + score + '%) แนะนำ CALL';
+              } else if (score <= -40) {
+                finalAction = 'PUT';
+                decisionReason = '✅ [Action Allowed: Y] Trend Score ขาลงรุนแรง (' + score + '%) แนะนำ PUT';
+              } else {
+                finalAction = 'IDLE';
+                decisionReason = '✅ [Action Allowed: Y] Trend Score อยู่ในโซนก้ำกึ่ง (' + score + '%) -> IDLE';
+              }
+              break;
+
+            default:
+              finalAction = 'IDLE';
+              decisionReason = '✅ [Action Allowed: Y] ไม่พบกลยุทธ์ที่กำหนด -> IDLE';
+              break;
+          }
+        }
+
+        return {
+          index: index,
+          time: currentCandle.time,
+          candle: currentCandle,
+          trendResult: trendResult,
+          codeNo: codeNo,
+          caseCode: caseCode,
+          caseGroup: caseGroup,
+          isSelectedToAction: isSelected,
+          finalAction: finalAction,
+          decisionReason: decisionReason
+        };
+      }
+
+      function runFullEvaluation() {
+        var count = parseInt(document.getElementById('candleCountSelect').value, 10) || 60;
+        var strategyType = document.getElementById('strategySelect').value || 'PREDICT_NEXT_CANDLE';
+        var candles = generateMockCandles(count);
+
+        evaluatedResults = [];
+        var totalCandles = candles.length;
+        var selectedYCount = 0;
+        var idleCount = 0;
+        var callCount = 0;
+        var putCount = 0;
+
+        for (var i = 2; i < candles.length; i++) {
+          var res = evaluateCandleWithStrategy(candles, i, strategyType);
+          evaluatedResults.push(res);
+
+          if (res.isSelectedToAction === 'y') selectedYCount++;
+          else idleCount++;
+
+          if (res.finalAction === 'CALL') callCount++;
+          else if (res.finalAction === 'PUT') putCount++;
+        }
+
+        // Update KPI Cards
+        document.getElementById('kpiTotalCandles').textContent = evaluatedResults.length;
+        document.getElementById('kpiSelectedCount').textContent = selectedYCount;
+        document.getElementById('kpiIdleCount').textContent = idleCount;
+        document.getElementById('kpiCallCount').textContent = callCount;
+        document.getElementById('kpiPutCount').textContent = putCount;
+
+        var filterRate = evaluatedResults.length > 0 ? Math.round((idleCount / evaluatedResults.length) * 100) : 0;
+        document.getElementById('kpiFilterRate').textContent = filterRate + '%';
+
+        renderEvaluationTable();
+      }
+
+      function renderEvaluationTable() {
+        var tbody = document.getElementById('evalTableBody');
+        if (!tbody) return;
+
+        var filtered = evaluatedResults.filter(function (r) {
+          if (activeFilter === 'ALL') return true;
+          if (activeFilter === 'CALL') return r.finalAction === 'CALL';
+          if (activeFilter === 'PUT') return r.finalAction === 'PUT';
+          if (activeFilter === 'IDLE') return r.finalAction === 'IDLE' || r.finalAction === 'WAIT';
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px; color:#64748b;">ไม่พบรายการที่ตรงกับฟิลเตอร์</td></tr>';
+          return;
+        }
+
+        var html = '';
+        filtered.forEach(function (r) {
+          var dateStr = new Date(r.time * 1000).toLocaleTimeString('th-TH');
+          var isY = r.isSelectedToAction === 'y';
+          var actClass = r.finalAction === 'CALL' ? 'call' : (r.finalAction === 'PUT' ? 'put' : 'idle');
+          var isBullish = r.candle.close >= r.candle.open;
+          var colorClass = isBullish ? '#22c55e' : '#ef4444';
+
+          html += '<tr>' +
+            '<td style="text-align:center; font-weight:700; color:#64748b;">' + (r.index + 1) + '</td>' +
+            '<td style="font-family:var(--font-mono); font-size:11.5px; color:#cbd5e1;">' + dateStr + '</td>' +
+            '<td style="font-family:var(--font-mono); font-weight:700; color:' + colorClass + ';">' + r.candle.close.toFixed(2) + '</td>' +
+            '<td>' +
+              '<span class="badge-case">[No. ' + r.codeNo + '] ' + r.caseCode + '</span>' +
+            '</td>' +
+            '<td style="font-weight:600; color:#94a3b8;">' + r.caseGroup + '</td>' +
+            '<td style="text-align:center;">' +
+              '<span class="badge-selected ' + (isY ? 'y' : 'n') + '">' + (isY ? '✅ y (Selected)' : '⚪ n (Disabled)') + '</span>' +
+            '</td>' +
+            '<td style="text-align:center;">' +
+              '<span class="badge-action ' + actClass + '">' + r.finalAction + '</span>' +
+            '</td>' +
+            '<td style="font-size:11.5px; color:' + (isY ? (r.finalAction === 'CALL' ? '#4ade80' : (r.finalAction === 'PUT' ? '#f87171' : '#f8fafc')) : '#94a3b8') + ';">' +
+              r.decisionReason +
+            '</td>' +
+          '</tr>';
+        });
+
+        tbody.innerHTML = html;
+      }
+
+      // Filter Pill Buttons
+      document.querySelectorAll('.pill-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          document.querySelectorAll('.pill-btn').forEach(function (b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          activeFilter = btn.getAttribute('data-filter') || 'ALL';
+          renderEvaluationTable();
+        });
+      });
+
+      var runBtn = document.getElementById('runStrategyBtn');
+      if (runBtn) {
+        runBtn.addEventListener('click', function () {
+          loadCaseCodesJson(function () {
+            runFullEvaluation();
+          });
+        });
+      }
+
+      // Strategy Select Change
+      var stratSelect = document.getElementById('strategySelect');
+      if (stratSelect) {
+        stratSelect.addEventListener('change', function () {
+          runFullEvaluation();
+        });
+      }
+
+      // Initial Load
+      loadCaseCodesJson(function () {
+        runFullEvaluation();
+      });
+
+      // Expose to window so Case Codes Modal can trigger re-evaluation after save
+      window.reloadAndReevaluateStrategy = function () {
+        loadCaseCodesJson(function () {
+          runFullEvaluation();
+        });
+      };
+
+    })();
+
+    // ==========================================================================
+    // Case Codes Management Logic (JSON Editor Modal)
+    // ==========================================================================
+    (function () {
+      var modal = document.getElementById('caseCodesModal');
+      var openBtn = document.getElementById('openCaseCodesModalBtn');
+      var closeBtn = document.getElementById('closeCaseCodesModalBtn');
+      var tableBody = document.getElementById('ccmTableBody');
+      var searchInput = document.getElementById('ccmSearchInput');
+      var groupFilter = document.getElementById('ccmGroupFilter');
+      var actionFilter = document.getElementById('ccmActionFilter');
+      var saveBtn = document.getElementById('ccmSaveBtn');
+      var reloadBtn = document.getElementById('ccmReloadBtn');
+      var setAllYesBtn = document.getElementById('ccmSetAllYesBtn');
+      var setAllNoBtn = document.getElementById('ccmSetAllNoBtn');
+      var resetDefaultsBtn = document.getElementById('ccmResetDefaultsBtn');
+      var toast = document.getElementById('ccmToast');
+
+      var casesList = [];
+
+      function showToast(msg, isError) {
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.style.borderColor = isError ? '#ef4444' : '#38bdf8';
+        toast.style.color = isError ? '#fca5a5' : '#f8fafc';
+        toast.classList.add('show');
+        setTimeout(function () { toast.classList.remove('show'); }, 3500);
+      }
+
+      function getGroupClass(group) {
+        var g = (group || '').toLowerCase();
+        if (g.indexOf('up') !== -1) return 'up';
+        if (g.indexOf('down') !== -1) return 'down';
+        if (g.indexOf('spike') !== -1) return 'spike';
+        if (g.indexOf('reject') !== -1) return 'rejected';
+        if (g.indexOf('engulf') !== -1) return 'engulfing';
+        if (g.indexOf('system') !== -1) return 'system';
+        return 'sideways';
+      }
+
+      function updateStats() {
+        var yesCount = 0;
+        var noCount = 0;
+        casesList.forEach(function (c) {
+          if (c.isSelectedToAction === 'y') yesCount++;
+          else noCount++;
+        });
+        var elTotal = document.getElementById('ccmTotalCount');
+        var elYes = document.getElementById('ccmYesCount');
+        var elNo = document.getElementById('ccmNoCount');
+        if (elTotal) elTotal.textContent = casesList.length;
+        if (elYes) elYes.textContent = yesCount;
+        if (elNo) elNo.textContent = noCount;
+      }
+
+      function renderTable() {
+        if (!tableBody) return;
+        var q = (searchInput ? searchInput.value : '').trim().toLowerCase();
+        var grp = groupFilter ? groupFilter.value : 'ALL';
+        var act = actionFilter ? actionFilter.value : 'ALL';
+
+        var filtered = casesList.filter(function (c) {
+          if (grp !== 'ALL' && c.group !== grp) return false;
+          if (act !== 'ALL' && c.isSelectedToAction !== act) return false;
+          if (q) {
+            var matchCodeNo = String(c.codeNo).indexOf(q) !== -1;
+            var matchCode = (c.caseCode || '').toLowerCase().indexOf(q) !== -1;
+            var matchDesc = (c.caseDesc || '').toLowerCase().indexOf(q) !== -1;
+            var matchText = (c.description || '').toLowerCase().indexOf(q) !== -1;
+            var matchTrend = (c.trend || '').toLowerCase().indexOf(q) !== -1;
+            if (!matchCodeNo && !matchCode && !matchDesc && !matchText && !matchTrend) return false;
+          }
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:#64748b;">ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา</td></tr>';
+          updateStats();
+          return;
+        }
+
+        var html = '';
+        filtered.forEach(function (c) {
+          var isYes = c.isSelectedToAction === 'y';
+          html += '<tr data-codeno="' + c.codeNo + '">' +
+            '<td style="text-align:center; font-weight:800; color:#38bdf8; font-family:\'JetBrains Mono\',monospace;">' + c.codeNo + '</td>' +
+            '<td>' +
+              '<span class="badge-case">' + (c.caseCode || '—') + '</span>' +
+              '<div style="font-size:10.5px; color:#64748b; font-family:\'JetBrains Mono\',monospace; margin-top:2px;">' + (c.caseDesc || '') + '</div>' +
+            '</td>' +
+            '<td>' +
+              '<div style="font-weight:700; color:#e2e8f0;">' + (c.group || '—') + '</div>' +
+              '<div style="font-size:11px; color:#94a3b8;">' + (c.trend || 'null') + '</div>' +
+            '</td>' +
+            '<td style="text-align:center;">' +
+              '<span style="font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.1);">' + (c.category || 'CORE') + '</span>' +
+            '</td>' +
+            '<td style="text-align:center;">' +
+              '<select class="ccm-action-select ' + (isYes ? 'yes' : 'no') + '" onchange="window._onCcmActionChange(' + c.codeNo + ', this)">' +
+                '<option value="y"' + (isYes ? ' selected' : '') + '>✅ Y (Active)</option>' +
+                '<option value="n"' + (!isYes ? ' selected' : '') + '>⚪ N (Disabled)</option>' +
+              '</select>' +
+            '</td>' +
+            '<td>' +
+              '<textarea class="ccm-desc-input" rows="1" onchange="window._onCcmDescChange(' + c.codeNo + ', this.value)">' + (c.description || '') + '</textarea>' +
+            '</td>' +
+          '</tr>';
+        });
+
+        tableBody.innerHTML = html;
+        updateStats();
+      }
+
+      window._onCcmActionChange = function (codeNo, selectEl) {
+        var val = selectEl.value;
+        var item = casesList.find(function (c) { return c.codeNo === codeNo; });
+        if (item) {
+          item.isSelectedToAction = val;
+          selectEl.className = 'ccm-action-select ' + (val === 'y' ? 'yes' : 'no');
+          updateStats();
+        }
+      };
+
+      window._onCcmDescChange = function (codeNo, newDesc) {
+        var item = casesList.find(function (c) { return c.codeNo === codeNo; });
+        if (item) {
+          item.description = newDesc;
+        }
+      };
+
+      function loadCasesData() {
+        fetch('case_codes.json?t=' + Date.now())
+          .then(function (res) {
+            if (!res.ok) throw new Error('Cannot fetch case_codes.json');
+            return res.json();
+          })
+          .then(function (data) {
+            casesList = (data && data.cases) ? data.cases : (Array.isArray(data) ? data : []);
+            renderTable();
+          })
+          .catch(function (err) {
+            console.warn('Fallback loading case_codes:', err);
+          });
+      }
+
+      function saveCasesData() {
+        if (!casesList || casesList.length === 0) return;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '⏳ กำลังบันทึก...';
+
+        localStorage.setItem('case_codes_config', JSON.stringify(casesList));
+        var payload = {
+          total: casesList.length,
+          version: "5.0",
+          updated_at: new Date().toISOString(),
+          cases: casesList
+        };
+
+        // 1. Try Rust API first
+        fetch('/api/save_case_codes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error('Rust API HTTP ' + res.status);
+            return res.json();
+          })
+          .then(function (res) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '💾 บันทึก JSON';
+            showToast('🦀 ' + (res.message || 'Rust บันทึกไฟล์ JSON สำเร็จแล้ว'), false);
+            renderTable();
+            if (window.reloadAndReevaluateStrategy) {
+              window.reloadAndReevaluateStrategy();
+            }
+          })
+          .catch(function () {
+            // 2. Fallback to PHP API
+            fetch('php/save_case_codes.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            })
+              .then(function (res) { return res.json(); })
+              .then(function (res) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '💾 บันทึก JSON';
+                if (res.success) {
+                  showToast('✅ ' + (res.message || 'บันทึกสำเร็จเรียบร้อยแล้ว'), false);
+                  renderTable();
+                  if (window.reloadAndReevaluateStrategy) {
+                    window.reloadAndReevaluateStrategy();
+                  }
+                } else {
+                  showToast('✅ บันทึกใน LocalStorage เรียบร้อยแล้ว', false);
+                }
+              })
+              .catch(function () {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '💾 บันทึก JSON';
+                showToast('✅ บันทึกการตั้งค่าใน LocalStorage เรียบร้อยแล้ว', false);
+              });
+          });
+      }
+
+      // Event Listeners
+      if (openBtn) {
+        openBtn.addEventListener('click', function () {
+          if (modal) modal.classList.add('active');
+          loadCasesData();
+        });
+      }
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function () {
+          if (modal) modal.classList.remove('active');
+        });
+      }
+
+      if (modal) {
+        modal.addEventListener('click', function (e) {
+          if (e.target === modal) modal.classList.remove('active');
+        });
+      }
+
+      if (searchInput) searchInput.addEventListener('input', renderTable);
+      if (groupFilter) groupFilter.addEventListener('change', renderTable);
+      if (actionFilter) actionFilter.addEventListener('change', renderTable);
+
+      if (setAllYesBtn) {
+        setAllYesBtn.addEventListener('click', function () {
+          casesList.forEach(function (c) { c.isSelectedToAction = 'y'; });
+          renderTable();
+          showToast('⚡ ตั้งค่าทุกรายการเป็น Action = y', false);
+        });
+      }
+
+      if (setAllNoBtn) {
+        setAllNoBtn.addEventListener('click', function () {
+          casesList.forEach(function (c) { c.isSelectedToAction = 'n'; });
+          renderTable();
+          showToast('⚪ ตั้งค่าทุกรายการเป็น Action = n', false);
+        });
+      }
+
+      if (resetDefaultsBtn) {
+        resetDefaultsBtn.addEventListener('click', function () {
+          casesList.forEach(function (c) {
+            var isRec = (c.codeNo >= 1 && c.codeNo <= 6) || c.codeNo === 9 || c.codeNo === 10 || c.codeNo === 11 || c.codeNo === 12;
+            c.isSelectedToAction = isRec ? 'y' : 'n';
+          });
+          renderTable();
+          showToast('🎯 รีเซ็ตเป็นค่าเริ่มต้นที่แนะนำเรียบร้อยแล้ว', false);
+        });
+      }
+
+      if (saveBtn) saveBtn.addEventListener('click', saveCasesData);
+      if (reloadBtn) reloadBtn.addEventListener('click', function () {
+        loadCasesData();
+        showToast('🔄 รีโหลดข้อมูลจากไฟล์ JSON เรียบร้อย', false);
+      });
+
+      // Initial Load
+      loadCasesData();
+
+    })();
+  </script>
+</body>
+</html>

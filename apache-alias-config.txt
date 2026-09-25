@@ -1,0 +1,14 @@
+# คัดลอกโค้ดนี้ไปใส่ในไฟล์ C:\xampp\apache\conf\extra\httpd-vhosts.conf
+# หรือ C:\xampp\apache\conf\httpd.conf
+
+# เพิ่มบรรทัดนี้เข้าไป:
+
+Alias /dynamicChart "D:/Rust/dynamicChart"
+<Directory "D:/Rust/dynamicChart">
+    Options Indexes FollowSymLinks MultiViews
+    AllowOverride All
+    Require all granted
+</Directory>
+
+# หลังจากนั้นรีสตาร์ท Apache
+# แล้วเข้าที่ http://localhost/dynamicChart/analysisTrade.html

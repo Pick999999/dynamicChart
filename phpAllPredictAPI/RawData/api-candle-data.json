@@ -1,0 +1,19 @@
+{
+    "assetCode": "R_10",
+    "totalCandles": 200,
+    "firstCandle": {
+        "time": 1789372140,
+        "open": 4865.896,
+        "high": 4865.896,
+        "low": 4864.806,
+        "close": 4865.328
+    },
+    "lastCandle": {
+        "time": 1789384080,
+        "open": 4883.033,
+        "high": 4883.284,
+        "low": 4882.911,
+        "close": 4883.195
+    },
+    "receivedAt": "2026-09-14 13:08:52"
+}

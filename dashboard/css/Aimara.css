@@ -1,0 +1,226 @@
+/**
+ * AimaraJS TreeView CSS - Vision UI Dark Theme
+ */
+
+ul.tree, ul.tree ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  padding-left: 20px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: default;
+  position: relative;
+}
+
+ul.tree {
+  padding-left: 4px;
+}
+
+/* Connecting lines */
+ul.tree ul::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 12px;
+  left: 9px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+ul.tree li {
+  margin: 4px 0;
+  padding: 2px 0 2px 22px;
+  line-height: 28px;
+  position: relative;
+}
+
+ul.tree li::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 9px;
+  width: 10px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+ul.tree > li::before {
+  display: none; /* No leading branch for root */
+}
+
+/* Expand / Collapse Toggle Icon */
+img.exp_col {
+  position: absolute;
+  top: 6px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  z-index: 2;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  opacity: 0.85;
+}
+
+img.exp_col:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* Node Icon */
+img.icon_tree {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  margin-right: 6px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Node Container */
+span.node {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: var(--text-primary, #e2e8f0);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+span.node a {
+  color: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+span.node:hover {
+  background: rgba(0, 117, 255, 0.12);
+  border-color: rgba(0, 117, 255, 0.25);
+  color: #fff;
+  transform: translateX(2px);
+}
+
+/* Selected Node */
+span.node_selected {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(0, 117, 255, 0.35) 0%, rgba(30, 20, 100, 0.45) 100%);
+  border: 1px solid rgba(0, 117, 255, 0.55);
+  box-shadow: 0 0 12px rgba(0, 117, 255, 0.25);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+span.node_selected a {
+  color: #fff;
+  text-decoration: none;
+}
+
+/* Custom Tree Item Badges */
+.tree-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tree-badge-server {
+  background: rgba(56, 239, 125, 0.15);
+  color: #38ef7d;
+  border: 1px solid rgba(56, 239, 125, 0.3);
+}
+
+.tree-badge-round {
+  background: rgba(0, 198, 255, 0.15);
+  color: #00c6ff;
+  border: 1px solid rgba(0, 198, 255, 0.3);
+}
+
+.tree-badge-asset {
+  background: rgba(255, 154, 68, 0.15);
+  color: #ff9a44;
+  border: 1px solid rgba(255, 154, 68, 0.3);
+}
+
+.tree-badge-win {
+  background: rgba(16, 185, 129, 0.18);
+  color: #10b981;
+}
+
+.tree-badge-loss {
+  background: rgba(239, 68, 68, 0.18);
+  color: #ef4444;
+}
+
+/* Asset Pills on Round Node */
+.tree-asset-pills-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+  flex-wrap: wrap;
+}
+
+.tree-asset-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tree-asset-pill:hover {
+  transform: scale(1.06);
+}
+
+.tree-asset-pill .asset-code {
+  font-weight: 700;
+}
+
+.tree-asset-pill .asset-pnl {
+  font-weight: 700;
+}
+
+.tree-asset-pill-win {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.tree-asset-pill-loss {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.tree-asset-pill-zero {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+

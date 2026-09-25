@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คู่มือสถาปัตยกรรมระบบ Forecast: 2-Bar Sequence Action Engine</title>
+  
+  <!-- Google Fonts: Inter, Prompt (Thai), JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Mermaid.js for Diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <style>
+    :root {
+      --bg-main: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-card: rgba(17, 24, 39, 0.75);
+      --bg-card-hover: rgba(31, 41, 55, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(56, 189, 248, 0.4);
+
+      --text-main: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+
+      --primary: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.25);
+      --secondary: #818cf8;
+      
+      --call-green: #10b981;
+      --call-bg: rgba(16, 185, 129, 0.12);
+      --call-border: rgba(16, 185, 129, 0.35);
+
+      --put-red: #f43f5e;
+      --put-bg: rgba(244, 63, 94, 0.12);
+      --put-border: rgba(244, 63, 94, 0.35);
+
+      --wait-yellow: #f59e0b;
+      --wait-bg: rgba(245, 158, 11, 0.12);
+      --wait-border: rgba(245, 158, 11, 0.35);
+
+      --purple: #a855f7;
+      --purple-bg: rgba(168, 85, 247, 0.12);
+      --purple-border: rgba(168, 85, 247, 0.35);
+
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Inter', 'Prompt', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 40%),
+        radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.08) 0px, transparent 40%),
+        radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    /* Layout */
+    .app-container {
+      display: flex;
+      max-width: 1600px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 28px 20px;
+      border-right: 1px solid var(--border-color);
+      background: rgba(10, 14, 23, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .sidebar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .sidebar-header {
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      color: #fff;
+      background: rgba(56, 189, 248, 0.1);
+      border-left-color: var(--primary);
+      transform: translateX(4px);
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 11px;
+      background: rgba(255,255,255,0.06);
+      padding: 2px 7px;
+      border-radius: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Main Content Area */
+    .content-area {
+      flex: 1;
+      padding: 36px 48px;
+      max-width: calc(100% - 300px);
+    }
+
+    /* Header Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 36px 40px;
+      margin-bottom: 40px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .tag {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tag-blue { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: var(--primary); }
+    .tag-purple { background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.35); color: var(--purple); }
+    .tag-green { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: var(--call-green); }
+
+    .hero-title {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #fff 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 16px;
+      color: #cbd5e1;
+      max-width: 900px;
+      line-height: 1.7;
+    }
+
+    .file-ref-box {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .file-ref {
+      font-family: var(--font-mono);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #38bdf8;
+    }
+
+    /* Section Styles */
+    section {
+      margin-bottom: 50px;
+      scroll-margin-top: 30px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title span.number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--primary);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: var(--font-mono);
+    }
+
+    /* Card Systems */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      margin-bottom: 20px;
+      transition: border-color 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .concept-box {
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.25);
+    }
+    .concept-box.prev {
+      border-left: 4px solid var(--purple);
+    }
+    .concept-box.curr {
+      border-left: 4px solid var(--primary);
+    }
+    .concept-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Math Highlight Box */
+    .math-highlight {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(168, 85, 247, 0.08));
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .math-formula {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.05em;
+      margin: 8px 0;
+    }
+
+    /* Tables */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(12px);
+    }
+
+    .table-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(0, 0, 0, 0.2);
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .search-input {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 14px;
+      color: #fff;
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      min-width: 260px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-glow);
+    }
+
+    .filter-btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: var(--font-sans);
+    }
+    .filter-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    .filter-btn.active {
+      background: var(--primary);
+      color: #0b0f17;
+      font-weight: 600;
+      border-color: var(--primary);
+    }
+
+    .custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+
+    .custom-table th {
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11.5px;
+      letter-spacing: 0.05em;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .custom-table td {
+      padding: 13px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+    }
+
+    .custom-table tr:hover td {
+      background: rgba(56, 189, 248, 0.04);
+    }
+
+    .code-badge {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pair-badge {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .arrow-icon {
+      color: var(--primary);
+    }
+
+    /* Action Badges */
+    .action-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
+    }
+    .action-call {
+      background: var(--call-bg);
+      color: #34d399;
+      border: 1px solid var(--call-border);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+    .action-put {
+      background: var(--put-bg);
+      color: #fb7185;
+      border: 1px solid var(--put-border);
+      box-shadow: 0 0 10px rgba(244, 63, 94, 0.2);
+    }
+    .action-wait {
+      background: var(--wait-bg);
+      color: #fbbf24;
+      border: 1px solid var(--wait-border);
+    }
+
+    .conf-badge {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .conf-max {
+      background: rgba(168, 85, 247, 0.2);
+      color: #c084fc;
+      border: 1px solid var(--purple-border);
+    }
+    .conf-high {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .conf-med {
+      background: rgba(148, 163, 184, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .score-meter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .score-bar {
+      width: 60px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .score-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+    .score-val {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      min-width: 32px;
+    }
+
+    /* Code Blocks */
+    .code-wrapper {
+      background: #070a10;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+    }
+    pre {
+      margin: 0;
+      padding: 20px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      color: #e2e8f0;
+    }
+    .hl-keyword { color: #f43f5e; font-weight: 600; }
+    .hl-var { color: #38bdf8; }
+    .hl-string { color: #34d399; }
+    .hl-comment { color: #64748b; font-style: italic; }
+    .hl-num { color: #fbbf24; }
+
+    /* Mermaid Diagrams */
+    .diagram-container {
+      background: rgba(10, 14, 23, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 24px;
+      overflow-x: auto;
+      text-align: center;
+      margin: 20px 0;
+      backdrop-filter: blur(12px);
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Flow Step List */
+    .flow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .flow-step-item {
+      display: flex;
+      gap: 16px;
+      padding: 16px 20px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      background: var(--primary);
+      color: #0b0f17;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* Back to Top */
+    .back-to-top {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 44px;
+      height: 44px;
+      background: var(--primary);
+      color: #0b0f17;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-size: 20px;
+      font-weight: bold;
+      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.35);
+      transition: all 0.3s ease;
+      opacity: 0.8;
+      z-index: 999;
+    }
+    .back-to-top:hover {
+      opacity: 1;
+      transform: translateY(-4px);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .app-container {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .content-area {
+        max-width: 100%;
+        padding: 24px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Left Navigation Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-title">
+        <span>🔮</span> Forecast Action
+      </div>
+      <div class="brand-subtitle">2-Bar Sequence Action Engine</div>
+    </div>
+
+    <ul class="nav-list">
+      <li>
+        <a href="#overview" class="nav-link">
+          <span>📌 1. ภาพรวมและแนวคิด</span>
+        </a>
+      </li>
+      <li>
+        <a href="#math-combinations" class="nav-link">
+          <span>📐 2. คณิตศาสตร์ 729 รูปแบบ</span>
+          <span class="nav-badge">27×27</span>
+        </a>
+      </li>
+      <li>
+        <a href="#architecture" class="nav-link">
+          <span>🏛️ 3. สถาปัตยกรรม 2 ระดับ</span>
+          <span class="nav-badge">2-Tier</span>
+        </a>
+      </li>
+      <li>
+        <a href="#case-codes" class="nav-link">
+          <span>📋 4. ตาราง 27 Case Codes</span>
+          <span class="nav-badge">27</span>
+        </a>
+      </li>
+      <li>
+        <a href="#exact-rules" class="nav-link">
+          <span>⚡ 5. กฎคู่รหัสแม่แบบ</span>
+          <span class="nav-badge">Key Rules</span>
+        </a>
+      </li>
+      <li>
+        <a href="#dynamic-transition" class="nav-link">
+          <span>⚙️ 6. Dynamic Transition</span>
+          <span class="nav-badge">Engine</span>
+        </a>
+      </li>
+      <li>
+        <a href="#gatekeeper" class="nav-link">
+          <span>🛡️ 7. Gatekeeper System</span>
+          <span class="nav-badge">Filter</span>
+        </a>
+      </li>
+      <li>
+        <a href="#flowchart" class="nav-link">
+          <span>🔄 8. แผนภาพการทำงาน</span>
+          <span class="nav-badge">Flow</span>
+        </a>
+      </li>
+    </ul>
+
+    <div style="margin-top: 30px; padding: 16px; background: rgba(0,0,0,0.3); border-radius: 10px; border: 1px solid var(--border-color); font-size: 12px; color: var(--text-muted);">
+      <div style="font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">💡 Key Summary</div>
+      วิเคราะห์คู่รหัสต่อเนื่อง (t-1 → t) เพื่อกรองสัญญาณหลอก และแม่นยำสูงกว่าการอ่านแท่งเดียว
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="content-area">
+    
+    <!-- Hero Banner -->
+    <header class="hero-banner">
+      <div class="hero-tags">
+        <span class="tag tag-blue">Transition Matrix 27 × 27 = 729</span>
+        <span class="tag tag-purple">2-Tier Action Architecture</span>
+        <span class="tag tag-green">CALL / PUT / WAIT Decision</span>
+      </div>
+      <h1 class="hero-title">คู่มือสถาปัตยกรรมระบบ Forecast: 2-Bar Sequence Action Engine</h1>
+      <p class="hero-desc">
+        ระบบวิเคราะห์คู่รหัสแท่งเทียนต่อเนื่อง 2 แท่ง ($t-1 \rightarrow t$) เพื่อทำนายทิศทางแท่งถัดไป ($t+1$) และประเมินความมั่นใจในการเข้าออเดอร์สำหรับตลาดความเร็วสูง (Dynamic Chart Engine)
+      </p>
+
+      <div class="file-ref-box">
+        <div>📂 ไฟล์ที่เกี่ยวข้อง:</div>
+        <span class="file-ref">predictNextCandle.js</span>
+        <span class="file-ref">detectTrend_V5.js</span>
+        <span class="file-ref">index_short_term.html</span>
+        <span class="file-ref">case_codes.json</span>
+      </div>
+    </header>
+
+    <!-- 1. ภาพรวมและแนวคิด -->
+    <section id="overview">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="number">01</span>
+          1. ภาพรวมและแนวคิด (Overview & Core Concepts)
+        </h2>
+      </div>
+
+      <div class="card">
+        <p style="font-size: 15.5px; margin-bottom: 20px; color: #e2e8f0;">
+          การวิเคราะห์แท่งเทียนแบบแท่งเดียวโดดๆ (Single-Bar Analysis) มักจะเจอปัญหา <strong style="color: #fb7185;">"สัญญาณหลอก (False Signals)"</strong> หรือติดกับดักราคา (Bull/Bear Traps) เนื่องจากไม่ทราบว่า <strong>"แรงของแท่งก่อนหน้าถูกส่งต่อมาอย่างไร"</strong>
+        </p>
+
+        <div class="grid-2">
+          <div class="concept-box prev">
+            <div class="concept-title" style="color: #c084fc;">
+              <span>⏳ แท่งก่อนหน้า (t - 1)</span>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 14px;">
+              ดูสภาวะที่เกิดขึ้นก่อนหน้า เช่น เกิด Inside Bar สะสมพลัง, เกิด Bull Trap หลอกซื้อ, หรือเป็นแท่ง Breakout พุ่งแรง
+            </p>
+          </div>
+
+          <div class="concept-box curr">
+            <div class="concept-title" style="color: #38bdf8;">
+              <span>⚡ แท่งปัจจุบัน (t)</span>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 14px;">
+              ดูพฤติกรรมตอบสนองของแท่งปัจจุบันว่า ยืนยัน (Confirm), ปฏิเสธแรงเดิม (Reject), หรือทะลุกรอบแนวรับแนวต้าน (Breakout)
+            </p>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px; padding: 14px 18px; background: rgba(56, 189, 248, 0.06); border-radius: 10px; border-left: 3px solid var(--primary); font-size: 14px; color: #cbd5e1;">
+          🎯 <strong>ผลลัพธ์:</strong> เมื่อนำข้อมูลทั้งสองแท่งมาร้อยเรียงกันเป็น <strong>"คู่รหัส (Transition Pair)"</strong> จะทำให้เข้าใจแรงส่งของโมเมนตัมและจิตวิทยาตลาดได้อย่างแม่นยำสูงสุด
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. คณิตศาสตร์คู่รหัส 27 x 27 -->
+    <section id="math-combinations">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="number">02</span>
+          2. คณิตศาสตร์คู่รหัส 27 × 27 = 729 รูปแบบ
+        </h2>
+      </div>
+
+      <div class="math-highlight">
+        <div style="font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.1em;">Total State Transitions</div>
+        <div class="math-formula">27 (t-1) × 27 (t) = 729 รูปแบบคู่รหัส</div>
+        <div style="font-size: 14px; color: #94a3b8;">
+          ในระบบ <span class="file-ref" style="font-size: 12px;">detectTrend_V5.js</span> มีการจำแนกสถานะแท่งเทียนเป็น 27 รูปแบบ (No. 1 ถึง No. 27)
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size: 16px; margin-bottom: 16px; color: #fff;">📊 โครงสร้าง Matrix การจับคู่ (Transition Matrix Preview)</h3>
+        <div style="overflow-x: auto;">
+          <table class="custom-table" style="text-align: center;">
+            <thead>
+              <tr>
+                <th style="text-align: left;">แท่งก่อนหน้า ($t-1$) \ แท่งปัจจุบัน ($t$)</th>
+                <th>No. 1 (UP-CONFIRM)</th>
+                <th>No. 2 (DN-CONFIRM)</th>
+                <th>No. 3 (SPK-CONTINUE-UP)</th>
+                <th>...</th>
+                <th>No. 27 (SPK-WHIPSAW)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="text-align: left; font-weight: 600;"><span class="code-badge">No. 1</span> UP-CONFIRM</td>
+                <td><span class="pair-badge">1 <span class="arrow-icon">➔</span> 1</span></td>
+                <td><span class="pair-badge">1 <span class="arrow-icon">➔</span> 2</span></td>
+                <td><span class="pair-badge">1 <span class="arrow-icon">➔</span> 3</span></td>
+                <td style="color: var(--text-muted);">...</td>
+                <td><span class="pair-badge">1 <span class="arrow-icon">➔</span> 27</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: left; font-weight: 600;"><span class="code-badge">No. 2</span> DN-CONFIRM</td>
+                <td><span class="pair-badge">2 <span class="arrow-icon">➔</span> 1</span></td>
+                <td><span class="pair-badge">2 <span class="arrow-icon">➔</span> 2</span></td>
+                <td><span class="pair-badge">2 <span class="arrow-icon">➔</span> 3</span></td>
+                <td style="color: var(--text-muted);">...</td>
+                <td><span class="pair-badge">2 <span class="arrow-icon">➔</span> 27</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: left; font-weight: 600;"><span class="code-badge">No. 17</span> SD-INSIDEBAR</td>
+                <td><span class="pair-badge">17 <span class="arrow-icon">➔</span> 1</span></td>
+                <td><span class="pair-badge">17 <span class="arrow-icon">➔</span> 2</span></td>
+                <td><span class="pair-badge">17 <span class="arrow-icon">➔</span> 3</span></td>
+                <td style="color: var(--text-muted);">...</td>
+                <td><span class="pair-badge">17 <span class="arrow-icon">➔</span> 27</span></td>
+              </tr>
+              <tr>
+                <td style="text-align: left; font-weight: 600;"><span class="code-badge">No. 27</span> SPK-WHIPSAW</td>
+                <td><span class="pair-badge">27 <span class="arrow-icon">➔</span> 1</span></td>
+                <td><span class="pair-badge">27 <span class="arrow-icon">➔</span> 2</span></td>
+                <td><span class="pair-badge">27 <span class="arrow-icon">➔</span> 3</span></td>
+                <td style="color: var(--text-muted);">...</td>
+                <td><span class="pair-badge">27 <span class="arrow-icon">➔</span> 27</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. สถาปัตยกรรม 2 ระดับ -->
+    <section id="architecture">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="number">03</span>
+          3. โครงสร้างสถาปัตยกรรม 2 ระดับ (2-Tier Architecture)
+        </h2>
+      </div>
+
+      <div class="card">
+        <p style="margin-bottom: 20px; color: var(--text-secondary);">
+          ระบบใน <span class="file-ref">predictNextCandle.js</span> รับประกันว่าจะ <strong style="color: #fff;">ไม่มีคู่รหัสใดหลุดการคำนวณ</strong> โดยใช้ระบบแบ่งชั้นการตัดสินใจ 2 ระดับ:
+        </p>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+flowchart TD
+    Start["Candle Array + Index แท่งปัจจุบัน (t)"] --> DetectPrev["ตรวจจับรหัสแท่งก่อนหน้า (t-1) ➔ pCodeNo"]
+    Start --> DetectCurr["ตรวจจับรหัสแท่งปัจจุบัน (t) ➔ cCodeNo"]
+    DetectPrev & DetectCurr --> PairKey["สร้างคู่รหัส pairKey = pCodeNo ➔ cCodeNo<br>(จาก 729 รูปแบบที่เป็นไปได้)"]
+    
+    PairKey --> CheckRule{"มีในตารางกฎพิเศษ<br>SEQUENCE_RULES[pairKey] หรือไม่?"}
+    
+    CheckRule -- "✅ มี (Exact Match)" --> Tier1["🎯 Tier 1: EXACT_RULE<br>• นำผลลัพธ์ Action เฉพาะเจาะจง<br>• Confidence: HIGH ถึง MAX<br>• Score: 80% - 95%<br>• ระบุชื่อ Pattern และเหตุผลเฉพาะ"]
+    
+    CheckRule -- "❌ ไม่มี (Generic Pair)" --> Tier2["⚡ Tier 2: DYNAMIC_TRANSITION<br>• คำนวณจากทิศทาง Trend โครงสร้าง (Up/Down/Sideways)<br>• ตรวจสอบสีแท่งเทียน (เขียว/แดง)<br>• ประเมินการส่งต่อโมเมนตัม (Continuation vs Hesitation)<br>• กำหนด Action: CALL / PUT / WAIT (Score 50-68%)"]
+    
+    Tier1 --> FinalOutput["ส่งคืนผลลัพธ์ Sequence Result<br>{ action, confidence, score, patternName, reason, matchType }"]
+    Tier2 --> FinalOutput
+          </pre>
+        </div>
+
+        <div class="grid-2" style="margin-top: 24px;">
+          <div class="concept-box" style="border-top: 3px solid #c084fc;">
+            <div class="concept-title" style="color: #c084fc;">🎯 Tier 1: EXACT_RULE (แม่แบบตายตัว)</div>
+            <ul style="padding-left: 20px; color: var(--text-secondary); font-size: 13.5px; display: flex; flex-direction: column; gap: 6px;">
+              <li>จับคู่กับพฤติกรรมที่มี Win Rate ชัดเจนทางสถิติ</li>
+              <li>ระดับความมั่นใจ: <strong>HIGH ถึง MAX</strong></li>
+              <li>คะแนนความน่าจะเป็น: <strong>80% – 95%</strong></li>
+              <li>เช่น Inside Bar Breakout, Exhaustion Spike, Trap Confirmation</li>
+            </ul>
+          </div>
+
+          <div class="concept-box" style="border-top: 3px solid #38bdf8;">
+            <div class="concept-title" style="color: #38bdf8;">⚡ Tier 2: DYNAMIC_TRANSITION (คำนวณพลวัต)</div>
+            <ul style="padding-left: 20px; color: var(--text-secondary); font-size: 13.5px; display: flex; flex-direction: column; gap: 6px;">
+              <li>ครอบคลุมทุกคู่รหัสที่เหลือใน 729 แบบโดยอัตโนมัติ</li>
+              <li>วิเคราะห์ Trend หลัก + สีแท่งเทียน + การชะลอตัว (Hesitation)</li>
+              <li>คะแนนความน่าจะเป็น: <strong>50% – 68%</strong></li>
+              <li>ช่วยให้ระบบไม่หยุดทำงานเมื่อเจอกราฟรูปแบบแปลกใหม่</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. ตารางรหัสมาตรฐาน 27 Case Codes -->
+    <section id="case-codes">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="number">04</span>
+          4. ตารางรหัสมาตรฐาน 27 Case Codes
+        </h2>
+      </div>
+
+      <div class="table-container">
+        <div class="table-controls">
+          <input type="text" id="caseSearch" class="search-input" placeholder="🔍 ค้นหา Case Code, ชื่อ, ความหมาย...">
+          <div class="filter-btn-group" id="caseFilterGroup">
+            <button class="filter-btn active" data-filter="all">ทั้งหมด (27)</button>
+            <button class="filter-btn" data-filter="UpTrend">UpTrend</button>
+            <button class="filter-btn" data-filter="DownTrend">DownTrend</button>
+            <button class="filter-btn" data-filter="Spike">Spike</button>
+            <button class="filter-btn" data-filter="Engulfing">Engulfing</button>
+            <button class="filter-btn" data-filter="Rejection">Rejection</button>
+            <button class="filter-btn" data-filter="Sideways">Sideways</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="custom-table" id="caseTable">
+            <thead>
+              <tr>
+                <th style="width: 70px; text-align: center;">No.</th>
+                <th>Case Code</th>
+                <th>กลุ่ม (Group)</th>
+                <th>ความหมายและพฤติกรรมแท่งเทียน</th>
+                <th style="text-align: center; width: 140px;">ทิศทางพื้นฐาน</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-group="UpTrend">
+                <td style="text-align: center;"><span class="code-badge" style="color: #38bdf8; font-weight: bold;">1</span></td>
+                <td><strong style="color: #fff;">UP-CONFIRM</strong></td>
+                <td><span class="tag tag-blue">UpTrend</span></td>
+                <td>แท่งเขียวทำ Higher High ยืนยันแนวโน้มขาขึ้น</td>
+                <td style="text-align: center;"><span class="action-badge action-call">🟢 Up</span></td>
+              </tr>
+              <tr data-group="DownTrend">
+                <td style="text-align: center;"><span class="code-badge" style="color: #fb7185; font-weight: bold;">2</span></td>
+                <td><strong style="color: #fff;">DN-CONFIRM</strong></td>
+                <td><span class="tag" style="background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.35); color: #fb7185;">DownTrend</span></td>
+                <td>แท่งแดงทำ Lower Low ยืนยันแนวโน้มขาลง</td>
+                <td style="text-align: center;"><span class="action-badge action-put">🔴 Down</span></td>
+              </tr>
+              <tr data-group="Spike">
+                <td style="text-align: center;"><span class="code-badge">3</span></td>
+                <td><strong style="color: #fff;">SPK-CONTINUE-UP</strong></td>
+                <td><span class="tag tag-purple">Spike</span></td>
+                <td>แท่งพุ่งขึ้นรุนแรงต่อเนื่องตามเทรนด์</td>
+                <td style="text-align: center;"><span class="action-badge action-call">🟢 Up</span></td>
+              </tr>
+              <tr data-group="Spike">
+                <td style="text-align: center;"><span class="code-badge">4</span></td>
+                <td><strong style="color: #fff;">SPK-CONTINUE-DN</strong></td>
+                <td><span class="tag tag-purple">Spike</span></td>
+                <td>แท่งทิ่มลงรุนแรงต่อเนื่องตามเทรนด์</td>
+                <td style="text-align: center;"><span class="action-badge action-put">🔴 Down</span></td>
+              </tr>
+              <tr data-group="Spike">
+                <td style="text-align: center;"><span class="code-badge">5</span></td>
+                <td><strong style="color: #fff;">SPK-BULLTRAP</strong></td>
+                <td><span class="tag tag-purple">Spike / Trap</span></td>
+                <td>แท่งพุ่งขึ้น New High แต่โดนทุบรูดมิด (กับดักกระทิง)</td>
+                <td style="text-align: center;"><span class="action-badge action-put">🔴 Reversal Dn</span></td>
+              </tr>
+              <tr data-group="Spike">
+                <td style="text-align: center;"><span class="code-badge">6</span></td>
+                <td><strong style="color: #fff;">SPK-BEARTRAP</strong></td>
+                <td><span class="tag tag-purple">Spike / Trap</span></td>
+                <td>แท่งทิ่มลง New Low แต่โดนซื้อกระชากกลับ (กับดักหมี)</td>
+                <td style="text-align: center;"><span class="action-badge action-call">🟢 Reversal Up</span></td>
+              </tr>
+              <tr data-group="Spike">
+                <td style="text-align: center;"><span class="code-badge">7</span></td>
+                <td><strong style="color: #fff;">SPK-NODIRECTION</strong></td>
+                <td><span class="tag tag-purple">Spike</span></td>
+                <td>แท่งผันผวนแต่ไม่มีทิศทางชัดเจน</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Neutral</span></td>
+              </tr>
+              <tr data-group="Spike">
+                <td style="text-align: center;"><span class="code-badge">8</span></td>
+                <td><strong style="color: #fff;">SPK-HESITANT-UP</strong></td>
+                <td><span class="tag tag-purple">Spike</span></td>
+                <td>พุ่งขึ้นแต่เริ่มมีแรงต้านชะลอตัว</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Neutral</span></td>
+              </tr>
+              <tr data-group="Engulfing">
+                <td style="text-align: center;"><span class="code-badge">9</span></td>
+                <td><strong style="color: #fff;">EG-BULLISH</strong></td>
+                <td><span class="tag tag-green">Engulfing</span></td>
+                <td>แท่งเขียวกลืนกินแท่งก่อนหน้าเต็มตัว</td>
+                <td style="text-align: center;"><span class="action-badge action-call">🟢 Strong Up</span></td>
+              </tr>
+              <tr data-group="Engulfing">
+                <td style="text-align: center;"><span class="code-badge">10</span></td>
+                <td><strong style="color: #fff;">EG-BEARISH</strong></td>
+                <td><span class="tag tag-green">Engulfing</span></td>
+                <td>แท่งแดงกลืนกินแท่งก่อนหน้าเต็มตัว</td>
+                <td style="text-align: center;"><span class="action-badge action-put">🔴 Strong Down</span></td>
+              </tr>
+              <tr data-group="Rejection">
+                <td style="text-align: center;"><span class="code-badge">11</span></td>
+                <td><strong style="color: #fff;">RJ-BULLTRAP-STRONG</strong></td>
+                <td><span class="tag" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3);">Rejection</span></td>
+                <td>ถูกแรงขายปฏิเสธอย่างรุนแรงที่แนวต้าน</td>
+                <td style="text-align: center;"><span class="action-badge action-put">🔴 Reversal Dn</span></td>
+              </tr>
+              <tr data-group="Rejection">
+                <td style="text-align: center;"><span class="code-badge">12</span></td>
+                <td><strong style="color: #fff;">RJ-BEARTRAP-STRONG</strong></td>
+                <td><span class="tag" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3);">Rejection</span></td>
+                <td>ถูกแรงซื้อปฏิเสธอย่างรุนแรงที่แนวรับ</td>
+                <td style="text-align: center;"><span class="action-badge action-call">🟢 Reversal Up</span></td>
+              </tr>
+              <tr data-group="Rejection">
+                <td style="text-align: center;"><span class="code-badge">13</span></td>
+                <td><strong style="color: #fff;">RJ-FOLLOWFAIL-UP</strong></td>
+                <td><span class="tag" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3);">Rejection</span></td>
+                <td>ขาขึ้นส่งต่อโมเมนตัมไม่สำเร็จ</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Neutral</span></td>
+              </tr>
+              <tr data-group="Rejection">
+                <td style="text-align: center;"><span class="code-badge">14</span></td>
+                <td><strong style="color: #fff;">RJ-FOLLOWFAIL-DN</strong></td>
+                <td><span class="tag" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3);">Rejection</span></td>
+                <td>ขาลงส่งต่อโมเมนตัมไม่สำเร็จ</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Neutral</span></td>
+              </tr>
+              <tr data-group="Rejection">
+                <td style="text-align: center;"><span class="code-badge">15</span></td>
+                <td><strong style="color: #fff;">RJ-UPWICK-WEAK</strong></td>
+                <td><span class="tag" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3);">Rejection</span></td>
+                <td>ไส้บนยาว กดดันฝั่งซื้อ</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Neutral</span></td>
+              </tr>
+              <tr data-group="Rejection">
+                <td style="text-align: center;"><span class="code-badge">16</span></td>
+                <td><strong style="color: #fff;">RJ-LOWWICK-WEAK</strong></td>
+                <td><span class="tag" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3);">Rejection</span></td>
+                <td>ไส้ล่างยาว มีแรงพยุงฝั่งขาย</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Neutral</span></td>
+              </tr>
+              <tr data-group="Sideways">
+                <td style="text-align: center;"><span class="code-badge">17</span></td>
+                <td><strong style="color: #fff;">SD-INSIDEBAR</strong></td>
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Sideways</span></td>
+                <td>แท่งบีบตัวอยู่ในกรอบแท่งก่อนหน้า (สะสมพลัง)</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Compression</span></td>
+              </tr>
+              <tr data-group="Sideways">
+                <td style="text-align: center;"><span class="code-badge">18</span></td>
+                <td><strong style="color: #fff;">SD-MIXEDSIGNAL</strong></td>
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Sideways</span></td>
+                <td>สัญญาณขัดแย้ง High/Low ผันผวน</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Choppy</span></td>
+              </tr>
+              <tr data-group="Sideways">
+                <td style="text-align: center;"><span class="code-badge">19</span></td>
+                <td><strong style="color: #fff;">SD-MIXEDSIGNAL-DN</strong></td>
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Sideways</span></td>
+                <td>สัญญาณขัดแย้ง โน้มเอียงทางลง</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Choppy</span></td>
+              </tr>
+              <tr data-group="Sideways">
+                <td style="text-align: center;"><span class="code-badge">20</span></td>
+                <td><strong style="color: #fff;">SYS-NODATA</strong></td>
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">System</span></td>
+                <td>ข้อมูลไม่เพียงพอในการวิเคราะห์</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ No Data</span></td>
+              </tr>
+              <tr data-group="Sideways">
+                <td style="text-align: center;"><span class="code-badge">21</span></td>
+                <td><strong style="color: #fff;">SD-DOJI</strong></td>
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Sideways</span></td>
+                <td>แท่ง Doji ลังเล แรงซื้อแรงขายเท่ากัน</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Indecision</span></td>
+              </tr>
+              <tr data-group="Sideways">
+                <td style="text-align: center;"><span class="code-badge">22</span></td>
+                <td><strong style="color: #fff;">SD-FLATRESISTANCE</strong></td>
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Sideways</span></td>
+                <td>ชนแนวต้านเดิมซ้ำๆ แล้วไม่ผ่าน</td>
+                <td style="text-align: center;"><span class="action-badge action-put">🔴 Resistance</span></td>
+              </tr>
+              <tr data-group="Sideways">
+                <td style="text-align: center;"><span class="code-badge">23</span></td>
+                <td><strong style="color: #fff;">SD-FLATSUPPORT</strong></td>
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Sideways</span></td>
+                <td>ชนแนวรับเดิมซ้ำๆ แล้วเด้งกลับ</td>
+                <td style="text-align: center;"><span class="action-badge action-call">🟢 Support</span></td>
+              </tr>
+              <tr data-group="Sideways">
+                <td style="text-align: center;"><span class="code-badge">24</span></td>
+                <td><strong style="color: #fff;">SD-NOSTRUCTURE</strong></td>
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Sideways</span></td>
+                <td>ไม่มีโครงสร้างเทรนด์ที่ชัดเจน</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Choppy</span></td>
+              </tr>
+              <tr data-group="Engulfing">
+                <td style="text-align: center;"><span class="code-badge">25</span></td>
+                <td><strong style="color: #fff;">EG-INDECISION</strong></td>
+                <td><span class="tag tag-green">Engulfing</span></td>
+                <td>กลืนกินแต่มีไส้สองข้าง ลังเล</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Indecision</span></td>
+              </tr>
+              <tr data-group="Spike">
+                <td style="text-align: center;"><span class="code-badge">26</span></td>
+                <td><strong style="color: #fff;">SPK-HESITANT-DN</strong></td>
+                <td><span class="tag tag-purple">Spike</span></td>
+                <td>ทิ่มลงแต่เริ่มมีแรงรับชะลอตัว</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Neutral</span></td>
+              </tr>
+              <tr data-group="Spike">
+                <td style="text-align: center;"><span class="code-badge">27</span></td>
+                <td><strong style="color: #fff;">SPK-WHIPSAW</strong></td>
+                <td><span class="tag tag-purple">Spike / Whipsaw</span></td>
+                <td>สับขาหลอกและผันผวนรุนแรง ไร้ทิศทาง</td>
+                <td style="text-align: center;"><span class="action-badge action-wait">⚪ Whipsaw</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. ตารางกฎคู่รหัสแม่แบบ -->
+    <section id="exact-rules">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="number">05</span>
+          5. ตารางกฎคู่รหัสแม่แบบ (Key Exact Rules)
+        </h2>
+      </div>
+
+      <div class="table-container">
+        <div class="table-controls">
+          <input type="text" id="ruleSearch" class="search-input" placeholder="🔍 ค้นหาคู่รหัส, ชื่อแพทเทิร์น, เหตุผล...">
+          <div class="filter-btn-group" id="ruleFilterGroup">
+            <button class="filter-btn active" data-action="all">ทั้งหมด</button>
+            <button class="filter-btn" data-action="CALL" style="color: #34d399;">🟢 CALL</button>
+            <button class="filter-btn" data-action="PUT" style="color: #fb7185;">🔴 PUT</button>
+            <button class="filter-btn" data-action="WAIT" style="color: #fbbf24;">⚪ WAIT</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="custom-table" id="rulesTable">
+            <thead>
+              <tr>
+                <th>กลุ่มรูปแบบ</th>
+                <th style="text-align: center;">คู่รหัส ($p \rightarrow c$)</th>
+                <th>ชื่อแพทเทิร์น</th>
+                <th style="text-align: center;">Action</th>
+                <th style="text-align: center;">ความมั่นใจ</th>
+                <th>Score</th>
+                <th>เหตุผลทางเทคนิค</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Inside Bar Breakout -->
+              <tr data-action="CALL">
+                <td><span class="tag tag-blue">Inside Bar Breakout</span></td>
+                <td style="text-align: center;"><span class="pair-badge">17 <span class="arrow-icon">➔</span> 1</span></td>
+                <td><strong style="color: #fff;">Inside Bar Breakout UP</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 85%; background: #38bdf8;"></div></div>
+                    <span class="score-val">85%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">Inside Bar สะสมพลังแล้วระเบิดทำ Higher High ขาขึ้นชัดเจน</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-blue">Inside Bar Breakout</span></td>
+                <td style="text-align: center;"><span class="pair-badge">17 <span class="arrow-icon">➔</span> 2</span></td>
+                <td><strong style="color: #fff;">Inside Bar Breakout DOWN</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 85%; background: #fb7185;"></div></div>
+                    <span class="score-val">85%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">Inside Bar สะสมพลังแล้วระเบิดทำ Lower Low ขาลงชัดเจน</td>
+              </tr>
+              <tr data-action="CALL">
+                <td><span class="tag tag-blue">Inside Bar Breakout</span></td>
+                <td style="text-align: center;"><span class="pair-badge">17 <span class="arrow-icon">➔</span> 9</span></td>
+                <td><strong style="color: #fff;">Inside Bar Bullish Engulfing</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 92%; background: #c084fc;"></div></div>
+                    <span class="score-val">92%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">สะสมพลังในกรอบแล้วตามด้วยแท่งเขียวกลืนกินเต็มแท่ง (Strong Bull Break)</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-blue">Inside Bar Breakout</span></td>
+                <td style="text-align: center;"><span class="pair-badge">17 <span class="arrow-icon">➔</span> 10</span></td>
+                <td><strong style="color: #fff;">Inside Bar Bearish Engulfing</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 92%; background: #c084fc;"></div></div>
+                    <span class="score-val">92%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">สะสมพลังในกรอบแล้วตามด้วยแท่งแดงกลืนกินเต็มแท่ง (Strong Bear Break)</td>
+              </tr>
+              <tr data-action="CALL">
+                <td><span class="tag tag-blue">Inside Bar Breakout</span></td>
+                <td style="text-align: center;"><span class="pair-badge">17 <span class="arrow-icon">➔</span> 3</span></td>
+                <td><strong style="color: #fff;">Inside Bar Spike Breakout UP</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 88%; background: #38bdf8;"></div></div>
+                    <span class="score-val">88%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">Spike พุ่งทะลุกรอบ Inside Bar รุนแรง</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-blue">Inside Bar Breakout</span></td>
+                <td style="text-align: center;"><span class="pair-badge">17 <span class="arrow-icon">➔</span> 4</span></td>
+                <td><strong style="color: #fff;">Inside Bar Spike Breakdown DOWN</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 88%; background: #fb7185;"></div></div>
+                    <span class="score-val">88%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">Spike ทิ่มทะลุกรอบ Inside Bar รุนแรง</td>
+              </tr>
+              <tr data-action="WAIT">
+                <td><span class="tag tag-blue">Inside Bar Breakout</span></td>
+                <td style="text-align: center;"><span class="pair-badge">17 <span class="arrow-icon">➔</span> 17</span></td>
+                <td><strong style="color: #fff;">Double Inside Bar Compression</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-wait">WAIT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 90%; background: #fbbf24;"></div></div>
+                    <span class="score-val">90%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">Inside Bar ซ้อน 2 แท่ง บีบตัวแคบสุดขีด รอเลือกทาง</td>
+              </tr>
+
+              <!-- Traps & Reversals -->
+              <tr data-action="PUT">
+                <td><span class="tag tag-purple">Traps & Reversals</span></td>
+                <td style="text-align: center;"><span class="pair-badge">1 <span class="arrow-icon">➔</span> 5</span></td>
+                <td><strong style="color: #fff;">UpTrend Spike Bull Trap</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 88%; background: #c084fc;"></div></div>
+                    <span class="score-val">88%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ขาขึ้นทำ New High แล้วโดนทุบรูดมิดแท่ง (Bull Trap) เสี่ยงกลับตัวลงรุนแรง</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-purple">Traps & Reversals</span></td>
+                <td style="text-align: center;"><span class="pair-badge">1 <span class="arrow-icon">➔</span> 11</span></td>
+                <td><strong style="color: #fff;">UpTrend Strong Bull Trap</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 86%; background: #c084fc;"></div></div>
+                    <span class="score-val">86%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">พยายามทำ High แต่ถูกแรงขายปฏิเสธอย่างรุนแรง (Strong Bull Trap)</td>
+              </tr>
+              <tr data-action="CALL">
+                <td><span class="tag tag-purple">Traps & Reversals</span></td>
+                <td style="text-align: center;"><span class="pair-badge">2 <span class="arrow-icon">➔</span> 6</span></td>
+                <td><strong style="color: #fff;">DownTrend Spike Bear Trap</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 88%; background: #c084fc;"></div></div>
+                    <span class="score-val">88%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ขาลงทำ New Low แล้วมีแรงซื้อกระชากกลับปิดเต็มแท่ง (Bear Trap) กลับตัวขึ้นแรง</td>
+              </tr>
+              <tr data-action="CALL">
+                <td><span class="tag tag-purple">Traps & Reversals</span></td>
+                <td style="text-align: center;"><span class="pair-badge">2 <span class="arrow-icon">➔</span> 12</span></td>
+                <td><strong style="color: #fff;">DownTrend Strong Bear Trap</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 86%; background: #c084fc;"></div></div>
+                    <span class="score-val">86%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">พยายามทำ Low แต่ถูกแรงซื้อดันกลับอย่างแข็งแกร่ง (Strong Bear Trap)</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-purple">Traps & Reversals</span></td>
+                <td style="text-align: center;"><span class="pair-badge">3 <span class="arrow-icon">➔</span> 5</span></td>
+                <td><strong style="color: #fff;">Double Spike Exhaustion Top</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 90%; background: #c084fc;"></div></div>
+                    <span class="score-val">90%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">Spike พุ่งสุดตัวแล้วตามด้วย Bull Trap จบคลื่นขาขึ้นทันที</td>
+              </tr>
+              <tr data-action="CALL">
+                <td><span class="tag tag-purple">Traps & Reversals</span></td>
+                <td style="text-align: center;"><span class="pair-badge">4 <span class="arrow-icon">➔</span> 6</span></td>
+                <td><strong style="color: #fff;">Double Spike Exhaustion Bottom</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 90%; background: #c084fc;"></div></div>
+                    <span class="score-val">90%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">Spike ทิ่มสุดตัวแล้วตามด้วย Bear Trap จบคลื่นขาลงทันที</td>
+              </tr>
+
+              <!-- Trap Confirmations -->
+              <tr data-action="CALL">
+                <td><span class="tag tag-green">Trap Confirmations</span></td>
+                <td style="text-align: center;"><span class="pair-badge">6 <span class="arrow-icon">➔</span> 1</span></td>
+                <td><strong style="color: #fff;">Bear Trap Confirmed UP</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 94%; background: #c084fc;"></div></div>
+                    <span class="score-val">94%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">Bear Trap ดักขายสำเร็จ และแท่งปัจจุบันดันทำ Higher High ยืนยันขาขึ้น</td>
+              </tr>
+              <tr data-action="CALL">
+                <td><span class="tag tag-green">Trap Confirmations</span></td>
+                <td style="text-align: center;"><span class="pair-badge">12 <span class="arrow-icon">➔</span> 1</span></td>
+                <td><strong style="color: #fff;">Strong Bear Trap Confirmed UP</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 92%; background: #c084fc;"></div></div>
+                    <span class="score-val">92%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ยืนยันการกลับตัวขึ้นหลังเกิด Strong Bear Trap</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-green">Trap Confirmations</span></td>
+                <td style="text-align: center;"><span class="pair-badge">5 <span class="arrow-icon">➔</span> 2</span></td>
+                <td><strong style="color: #fff;">Bull Trap Confirmed DOWN</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 94%; background: #c084fc;"></div></div>
+                    <span class="score-val">94%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">Bull Trap ดักซื้อสำเร็จ และแท่งปัจจุบันทุบทำ Lower Low ยืนยันขาลง</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-green">Trap Confirmations</span></td>
+                <td style="text-align: center;"><span class="pair-badge">11 <span class="arrow-icon">➔</span> 2</span></td>
+                <td><strong style="color: #fff;">Strong Bull Trap Confirmed DOWN</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 92%; background: #c084fc;"></div></div>
+                    <span class="score-val">92%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ยืนยันการกลับตัวลงหลังเกิด Strong Bull Trap</td>
+              </tr>
+
+              <!-- Trend Continuation -->
+              <tr data-action="CALL">
+                <td><span class="tag tag-blue">Trend Continuation</span></td>
+                <td style="text-align: center;"><span class="pair-badge">1 <span class="arrow-icon">➔</span> 1</span></td>
+                <td><strong style="color: #fff;">UpTrend Solid Continuation</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 82%; background: #38bdf8;"></div></div>
+                    <span class="score-val">82%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ทำ Higher High ต่อเนื่อง เทรนด์ขาขึ้นแข็งแกร่ง</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-blue">Trend Continuation</span></td>
+                <td style="text-align: center;"><span class="pair-badge">2 <span class="arrow-icon">➔</span> 2</span></td>
+                <td><strong style="color: #fff;">DownTrend Solid Continuation</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 82%; background: #fb7185;"></div></div>
+                    <span class="score-val">82%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ทำ Lower Low ต่อเนื่อง เทรนด์ขาลงแข็งแกร่ง</td>
+              </tr>
+              <tr data-action="CALL">
+                <td><span class="tag tag-blue">Trend Continuation</span></td>
+                <td style="text-align: center;"><span class="pair-badge">1 <span class="arrow-icon">➔</span> 16</span></td>
+                <td><strong style="color: #fff;">UpTrend Pullback & Dip Buy</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 80%; background: #38bdf8;"></div></div>
+                    <span class="score-val">80%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ขาขึ้นย่อติดแนวรับเกิดไส้ล่างยาวดันกลับ (Buy on Dip)</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-blue">Trend Continuation</span></td>
+                <td style="text-align: center;"><span class="pair-badge">2 <span class="arrow-icon">➔</span> 15</span></td>
+                <td><strong style="color: #fff;">DownTrend Pullback & Sell Rally</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 80%; background: #fb7185;"></div></div>
+                    <span class="score-val">80%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ขาลงดีดติดแนวต้านเกิดไส้บนยาวกดลง (Sell on Rally)</td>
+              </tr>
+              <tr data-action="CALL">
+                <td><span class="tag tag-blue">Trend Continuation</span></td>
+                <td style="text-align: center;"><span class="pair-badge">1 <span class="arrow-icon">➔</span> 23</span></td>
+                <td><strong style="color: #fff;">UpTrend Retest Support</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 76%; background: #38bdf8;"></div></div>
+                    <span class="score-val">76%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ขาขึ้นย่อทดสอบแนวรับเดิมแล้วเด้งกลับ</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-blue">Trend Continuation</span></td>
+                <td style="text-align: center;"><span class="pair-badge">2 <span class="arrow-icon">➔</span> 22</span></td>
+                <td><strong style="color: #fff;">DownTrend Retest Resistance</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 76%; background: #fb7185;"></div></div>
+                    <span class="score-val">76%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ขาลงดีดทดสอบแนวต้านเดิมแล้วไม่ผ่าน</td>
+              </tr>
+
+              <!-- Doji & Morning Star -->
+              <tr data-action="CALL">
+                <td><span class="tag tag-purple">Doji & Morning Star</span></td>
+                <td style="text-align: center;"><span class="pair-badge">21 <span class="arrow-icon">➔</span> 9</span></td>
+                <td><strong style="color: #fff;">Morning Star Bullish Break</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 84%; background: #38bdf8;"></div></div>
+                    <span class="score-val">84%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">จาก Doji ลังเล เปลี่ยนเป็นแท่งเขียวกลืนกินเต็มแท่ง (Morning Reversal)</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-purple">Doji & Morning Star</span></td>
+                <td style="text-align: center;"><span class="pair-badge">21 <span class="arrow-icon">➔</span> 10</span></td>
+                <td><strong style="color: #fff;">Evening Star Bearish Break</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 84%; background: #fb7185;"></div></div>
+                    <span class="score-val">84%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">จาก Doji ลังเล เปลี่ยนเป็นแท่งแดงกลืนกินเต็มแท่ง (Evening Reversal)</td>
+              </tr>
+              <tr data-action="CALL">
+                <td><span class="tag tag-purple">Doji & Morning Star</span></td>
+                <td style="text-align: center;"><span class="pair-badge">21 <span class="arrow-icon">➔</span> 1</span></td>
+                <td><strong style="color: #fff;">Doji Breakout UP</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 80%; background: #38bdf8;"></div></div>
+                    <span class="score-val">80%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">หลุดจาก Doji ลังเลด้วยแท่ง Up Confirm</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag tag-purple">Doji & Morning Star</span></td>
+                <td style="text-align: center;"><span class="pair-badge">21 <span class="arrow-icon">➔</span> 2</span></td>
+                <td><strong style="color: #fff;">Doji Breakdown DOWN</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 80%; background: #fb7185;"></div></div>
+                    <span class="score-val">80%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">หลุดจาก Doji ลังเลด้วยแท่ง Down Confirm</td>
+              </tr>
+              <tr data-action="WAIT">
+                <td><span class="tag tag-purple">Doji & Morning Star</span></td>
+                <td style="text-align: center;"><span class="pair-badge">21 <span class="arrow-icon">➔</span> 21</span></td>
+                <td><strong style="color: #fff;">Dual Doji Indecision</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-wait">WAIT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 90%; background: #fbbf24;"></div></div>
+                    <span class="score-val">90%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">Doji ต่อเนื่อง 2 แท่ง สองฝั่งสู้กันเสมอกัน ไร้ทิศทาง</td>
+              </tr>
+              <tr data-action="WAIT">
+                <td><span class="tag tag-purple">Doji & Morning Star</span></td>
+                <td style="text-align: center;"><span class="pair-badge">21 <span class="arrow-icon">➔</span> 17</span></td>
+                <td><strong style="color: #fff;">Double Squeeze Compression</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-wait">WAIT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-max">MAX</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 95%; background: #c084fc;"></div></div>
+                    <span class="score-val">95%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">ตลาดบีบตัวแคบต่อเนื่อง 2 แท่ง ปริมาณเทรดนิ่งสนิท รอระเบิดทิศทาง</td>
+              </tr>
+
+              <!-- Whipsaw & Choppy -->
+              <tr data-action="WAIT">
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Whipsaw & Choppy</span></td>
+                <td style="text-align: center;"><span class="pair-badge">18 <span class="arrow-icon">➔</span> 19</span></td>
+                <td><strong style="color: #fff;">Mixed Signal Choppiness</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-wait">WAIT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 85%; background: #fbbf24;"></div></div>
+                    <span class="score-val">85%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">สัญญาณขัดแย้ง High/Low สลับไปมา ติด Whipsaw</td>
+              </tr>
+              <tr data-action="WAIT">
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Whipsaw & Choppy</span></td>
+                <td style="text-align: center;"><span class="pair-badge">19 <span class="arrow-icon">➔</span> 18</span></td>
+                <td><strong style="color: #fff;">Mixed Signal Choppiness</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-wait">WAIT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-high">HIGH</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 85%; background: #fbbf24;"></div></div>
+                    <span class="score-val">85%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">สัญญาณขัดแย้ง High/Low สลับไปมา ติด Whipsaw</td>
+              </tr>
+              <tr data-action="CALL">
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Whipsaw & Choppy</span></td>
+                <td style="text-align: center;"><span class="pair-badge">27 <span class="arrow-icon">➔</span> 1</span></td>
+                <td><strong style="color: #fff;">Spike Whipsaw Breakout UP</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-call">CALL</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-med">MEDIUM</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 72%; background: #94a3b8;"></div></div>
+                    <span class="score-val">72%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">หลุดพ้นจาก Whipsaw ด้วยแท่ง Up Confirm</td>
+              </tr>
+              <tr data-action="PUT">
+                <td><span class="tag" style="background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3);">Whipsaw & Choppy</span></td>
+                <td style="text-align: center;"><span class="pair-badge">27 <span class="arrow-icon">➔</span> 2</span></td>
+                <td><strong style="color: #fff;">Spike Whipsaw Breakdown DOWN</strong></td>
+                <td style="text-align: center;"><span class="action-badge action-put">PUT</span></td>
+                <td style="text-align: center;"><span class="conf-badge conf-med">MEDIUM</span></td>
+                <td>
+                  <div class="score-meter">
+                    <div class="score-bar"><div class="score-fill" style="width: 72%; background: #94a3b8;"></div></div>
+                    <span class="score-val">72%</span>
+                  </div>
+                </td>
+                <td style="color: #cbd5e1;">หลุดพ้นจาก Whipsaw ด้วยแท่ง Down Confirm</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. ระบบ Dynamic Transition -->
+    <section id="dynamic-transition">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="number">06</span>
+          6. ระบบ Dynamic Transition (รองรับทุกคู่ใน 729 แบบ)
+        </h2>
+      </div>
+
+      <div class="card">
+        <p style="margin-bottom: 16px; color: var(--text-secondary);">
+          กรณีที่คู่รหัสนั้นไม่ได้อยู่ในตาราง <code style="color: #38bdf8;">SEQUENCE_RULES</code> ระบบจะใช้ตรรกะแบบ <strong>Dynamic Transition</strong> ในการอนุมานทิศทางและให้คะแนนแบบอัตโนมัติ:
+        </p>
+
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>JavaScript — predictNextCandle.js</span>
+            <span>Dynamic Transition Fallback Logic</span>
+          </div>
+          <pre><code><span class="hl-keyword">if</span> (currTrend.trend === <span class="hl-string">'UpTrend'</span>) {
+  <span class="hl-keyword">if</span> (currIsBullish) {
+    <span class="hl-comment">// โครงสร้างขึ้น + แท่งปัจจุบันเขียว</span>
+    action = <span class="hl-string">'CALL'</span>; confidence = <span class="hl-string">'MEDIUM'</span>; score = <span class="hl-num">68</span>;
+    patternName = <span class="hl-string">'UpTrend Momentum ('</span> + pCodeNo + <span class="hl-string">'➔'</span> + cCodeNo + <span class="hl-string">')'</span>;
+  } <span class="hl-keyword">else</span> {
+    <span class="hl-comment">// โครงสร้างขึ้นแต่แท่งปัจจุบันปิดแดง (ลังเล)</span>
+    action = <span class="hl-string">'WAIT'</span>; confidence = <span class="hl-string">'LOW'</span>; score = <span class="hl-num">55</span>;
+    patternName = <span class="hl-string">'UpTrend Hesitation ('</span> + pCodeNo + <span class="hl-string">'➔'</span> + cCodeNo + <span class="hl-string">')'</span>;
+  }
+} <span class="hl-keyword">else if</span> (currTrend.trend === <span class="hl-string">'DownTrend'</span>) {
+  <span class="hl-keyword">if</span> (!currIsBullish) {
+    <span class="hl-comment">// โครงสร้างลง + แท่งปัจจุบันแดง</span>
+    action = <span class="hl-string">'PUT'</span>; confidence = <span class="hl-string">'MEDIUM'</span>; score = <span class="hl-num">68</span>;
+    patternName = <span class="hl-string">'DownTrend Momentum ('</span> + pCodeNo + <span class="hl-string">'➔'</span> + cCodeNo + <span class="hl-string">')'</span>;
+  } <span class="hl-keyword">else</span> {
+    <span class="hl-comment">// โครงสร้างลงแต่แท่งปัจจุบันปิดเขียว (ลังเล)</span>
+    action = <span class="hl-string">'WAIT'</span>; confidence = <span class="hl-string">'LOW'</span>; score = <span class="hl-num">55</span>;
+    patternName = <span class="hl-string">'DownTrend Hesitation ('</span> + pCodeNo + <span class="hl-string">'➔'</span> + cCodeNo + <span class="hl-string">')'</span>;
+  }
+} <span class="hl-keyword">else</span> {
+  <span class="hl-comment">// สภาวะ Sideways หรือไร้ทิศทาง</span>
+  action = <span class="hl-string">'WAIT'</span>; confidence = <span class="hl-string">'MEDIUM'</span>; score = <span class="hl-num">60</span>;
+  patternName = <span class="hl-string">'Sideways/Transition ('</span> + pCodeNo + <span class="hl-string">'➔'</span> + cCodeNo + <span class="hl-string">')'</span>;
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. ระบบคัดกรอง Gatekeeper -->
+    <section id="gatekeeper">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="number">07</span>
+          7. ระบบคัดกรอง Gatekeeper (isSelectedToAction)
+        </h2>
+      </div>
+
+      <div class="card">
+        <p style="margin-bottom: 20px; color: var(--text-secondary);">
+          ในหน้าจอ <span class="file-ref">index_short_term.html</span> มีระบบ <strong>Gatekeeper</strong> เพื่อตรวจสอบสิทธิ์ความปลอดภัยก่อนที่จะอนุญาตให้ระบบเข้าทำออเดอร์จริง:
+        </p>
+
+        <div class="grid-2">
+          <div class="concept-box" style="border: 1px solid var(--put-border); background: var(--put-bg);">
+            <div style="font-size: 16px; font-weight: 700; color: #fb7185; margin-bottom: 8px;">
+              🔴 เมื่อ isSelectedToAction === 'n'
+            </div>
+            <p style="color: #cbd5e1; font-size: 14px;">
+              <strong>บังคับตัดเป็น IDLE (ข้ามการเทรด) ทันที</strong> แม้ผลลัพธ์ของ Sequence Engine จะวิเคราะห์ได้ CALL หรือ PUT ก็ตาม เพื่อป้องกันการเทรดในรหัสแท่งเทียนที่ผู้ใช้งานตั้งใจปิดใช้งาน
+            </p>
+          </div>
+
+          <div class="concept-box" style="border: 1px solid var(--call-border); background: var(--call-bg);">
+            <div style="font-size: 16px; font-weight: 700; color: #34d399; margin-bottom: 8px;">
+              🟢 เมื่อ isSelectedToAction === 'y'
+            </div>
+            <p style="color: #cbd5e1; font-size: 14px;">
+              <strong>อนุญาตให้ออก Action จริง</strong> โดยนำผลลัพธ์ที่คำนวณได้ (<code style="color: #34d399;">CALL</code> / <code style="color: #fb7185;">PUT</code> / <code style="color: #fbbf24;">WAIT</code>) ส่งต่อไปยังระบบวางออเดอร์อัตโนมัติ
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. แผนภาพการทำงาน -->
+    <section id="flowchart">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="number">08</span>
+          8. แผนภาพการทำงาน (Process Flowchart)
+        </h2>
+      </div>
+
+      <div class="card">
+        <div class="diagram-container">
+          <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant UI as index_short_term.html / macd.html
+    participant V5 as detectTrend_V5.js
+    participant SeqEngine as predictNextCandle.js (Sequence Engine)
+    participant Config as case_codes.json (isSelectedToAction)
+
+    UI->>V5: detectTrend(candles, t - 1)
+    V5-->>UI: prevTrend (pCodeNo, prevCaseCode)
+    UI->>V5: detectTrend(candles, t)
+    V5-->>UI: currTrend (cCodeNo, currCaseCode)
+    
+    UI->>SeqEngine: evaluateSequenceAction(candles, t)
+    Note over SeqEngine: จับคู่รหัส pairKey = pCodeNo ➔ cCodeNo (729 รูปแบบ)
+    SeqEngine->>SeqEngine: ตรวจสอบ EXACT_RULE หรือ DYNAMIC_TRANSITION
+    SeqEngine-->>UI: Sequence Result { action, score, confidence, patternName, reason }
+
+    UI->>Config: ตรวจสอบ isSelectedToAction ของ currCaseCode
+    alt isSelectedToAction === 'n'
+        Config-->>UI: 'n' (ไม่อนุญาตเทรด)
+        UI->>UI: กำหนด Final Action = 'IDLE' (ข้าม)
+    else isSelectedToAction === 'y'
+        Config-->>UI: 'y' (อนุญาตเทรด)
+        UI->>UI: กำหนด Final Action = Sequence Result.action (CALL / PUT / WAIT)
+    end
+          </pre>
+        </div>
+
+        <div class="flow-steps">
+          <div class="flow-step-item">
+            <div class="step-num">1</div>
+            <div>
+              <strong style="color: #fff;">คำนวณรหัส $t-1$ และ $t$:</strong>
+              <div style="color: var(--text-secondary); font-size: 13.5px;">UI เรียกใช้ <code>detectTrend_V5.js</code> เพื่อตรวจจับสถานะของแท่งก่อนหน้า ($pCodeNo$) และแท่งปัจจุบัน ($cCodeNo$)</div>
+            </div>
+          </div>
+          <div class="flow-step-item">
+            <div class="step-num">2</div>
+            <div>
+              <strong style="color: #fff;">ประเมินคู่รหัส Sequence Action:</strong>
+              <div style="color: var(--text-secondary); font-size: 13.5px;"><code>predictNextCandle.js</code> นำคู่รหัสมาจับคู่กับ <code>SEQUENCE_RULES</code> (Tier 1) หรือคำนวณผ่าน <code>DYNAMIC_TRANSITION</code> (Tier 2)</div>
+            </div>
+          </div>
+          <div class="flow-step-item">
+            <div class="step-num">3</div>
+            <div>
+              <strong style="color: #fff;">ตรวจสอบ Gatekeeper:</strong>
+              <div style="color: var(--text-secondary); font-size: 13.5px;">ตรวจสอบค่าคอนฟิก <code>isSelectedToAction</code> ของ Case Code ปัจจุบัน ถ้าเป็น <code>'n'</code> จะถูกตัดเป็น <code>IDLE</code> ทันทีเพื่อความปลอดภัย</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="margin-top: 60px; padding: 24px 0; border-top: 1px solid var(--border-color); text-align: center; color: var(--text-muted); font-size: 13px;">
+      เอกสารมาตรฐานอ้างอิงของระบบวิเคราะห์คู่รหัสแท่งเทียน (2-Bar Sequence Action Engine) — โปรเจกต์ dynamicChart
+    </footer>
+
+  </main>
+</div>
+
+<!-- Floating Back to Top Button -->
+<a href="#" class="back-to-top" title="กลับสู่ด้านบน">↑</a>
+
+<!-- Interactive Scripts -->
+<script>
+  // Initialize Mermaid
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      background: 'transparent',
+      primaryColor: '#38bdf8',
+      primaryTextColor: '#f3f4f6',
+      primaryBorderColor: 'rgba(56, 189, 248, 0.4)',
+      lineColor: '#94a3b8',
+      secondaryColor: '#1e293b',
+      tertiaryColor: '#0f172a'
+    }
+  });
+
+  // Active Navigation Highlighting on Scroll
+  const navLinks = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('section');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop;
+      const sectionHeight = section.clientHeight;
+      if (pageYOffset >= sectionTop - 120) {
+        current = section.getAttribute('id');
+      }
+    });
+
+    navLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === `#${current}`) {
+        link.classList.add('active');
+      }
+    });
+  });
+
+  // Filter & Search for 27 Case Codes Table
+  const caseSearch = document.getElementById('caseSearch');
+  const caseFilterBtns = document.querySelectorAll('#caseFilterGroup .filter-btn');
+  const caseRows = document.querySelectorAll('#caseTable tbody tr');
+
+  let currentCaseGroup = 'all';
+
+  function filterCaseTable() {
+    const query = caseSearch.value.toLowerCase().trim();
+    caseRows.forEach(row => {
+      const group = row.getAttribute('data-group');
+      const text = row.textContent.toLowerCase();
+      const matchGroup = (currentCaseGroup === 'all' || group === currentCaseGroup);
+      const matchQuery = text.includes(query);
+
+      if (matchGroup && matchQuery) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
+  caseSearch.addEventListener('input', filterCaseTable);
+
+  caseFilterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      caseFilterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCaseGroup = btn.getAttribute('data-filter');
+      filterCaseTable();
+    });
+  });
+
+  // Filter & Search for Key Exact Rules Table
+  const ruleSearch = document.getElementById('ruleSearch');
+  const ruleFilterBtns = document.querySelectorAll('#ruleFilterGroup .filter-btn');
+  const ruleRows = document.querySelectorAll('#rulesTable tbody tr');
+
+  let currentRuleAction = 'all';
+
+  function filterRuleTable() {
+    const query = ruleSearch.value.toLowerCase().trim();
+    ruleRows.forEach(row => {
+      const action = row.getAttribute('data-action');
+      const text = row.textContent.toLowerCase();
+      const matchAction = (currentRuleAction === 'all' || action === currentRuleAction);
+      const matchQuery = text.includes(query);
+
+      if (matchAction && matchQuery) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
+  ruleSearch.addEventListener('input', filterRuleTable);
+
+  ruleFilterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      ruleFilterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentRuleAction = btn.getAttribute('data-action');
+      filterRuleTable();
+    });
+  });
+</script>
+
+</body>
+</html>

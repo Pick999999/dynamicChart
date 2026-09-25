@@ -1,0 +1,278 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choppy Market Trading Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; min-height: 100vh; }
+        .container { max-width: 1600px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .header p { font-size: 1.1em; opacity: 0.9; }
+        .trading-stats { padding: 30px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .trading-stats h2 { text-align: center; font-size: 2em; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .stat-box { background: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; text-align: center; }
+        .stat-box .stat-value { font-size: 2.5em; font-weight: bold; margin-bottom: 5px; }
+        .stat-box .stat-label { font-size: 1em; opacity: 0.9; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; padding: 30px; background: #f8f9fa; }
+        .summary-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; transition: transform 0.3s; }
+        .summary-card:hover { transform: translateY(-5px); }
+        .summary-card h3 { font-size: 0.9em; color: #666; margin-bottom: 10px; text-transform: uppercase; }
+        .summary-card .value { font-size: 2em; font-weight: bold; margin-bottom: 5px; }
+        .summary-card .label { font-size: 0.85em; color: #999; }
+        .critical { color: #dc3545; }
+        .danger { color: #fd7e14; }
+        .warning { color: #ffc107; }
+        .safe { color: #28a745; }
+        .current-status { padding: 30px; text-align: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .current-status h2 { font-size: 2em; margin-bottom: 15px; }
+        .current-status .status-badge { display: inline-block; padding: 15px 30px; background: rgba(255,255,255,0.2); border-radius: 50px; font-size: 1.5em; margin: 10px; }
+        .table-container { padding: 30px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 10px; overflow: hidden; font-size: 0.85em; }
+        thead { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        th { padding: 12px 8px; text-align: left; font-weight: 600; font-size: 0.85em; text-transform: uppercase; }
+        td { padding: 10px 8px; border-bottom: 1px solid #f0f0f0; }
+        tr:hover { background: #f8f9fa; }
+        .row-critical { background: rgba(220, 53, 69, 0.1) !important; border-left: 4px solid #dc3545; }
+        .row-danger { background: rgba(253, 126, 20, 0.1) !important; border-left: 4px solid #fd7e14; }
+        .row-warning { background: rgba(255, 193, 7, 0.1) !important; border-left: 4px solid #ffc107; }
+        .row-low-risk { background: rgba(40, 167, 69, 0.05) !important; }
+        .row-safe { background: white; }
+        .color-green { color: #28a745; font-weight: bold; }
+        .color-red { color: #dc3545; font-weight: bold; }
+        .color-doji { color: #6c757d; font-weight: bold; }
+        .score-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.85em; }
+        .score-critical { background: #dc3545; color: white; }
+        .score-danger { background: #fd7e14; color: white; }
+        .score-warning { background: #ffc107; color: #000; }
+        .score-low { background: #28a745; color: white; }
+        .score-safe { background:#17a2b8; color: white; }
+        .action-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.9em; }
+        .action-buy { background: #28a745; color: white; }
+        .action-sell { background: #dc3545; color: white; }
+        .action-idle { background: #6c757d; color: white; }
+        .win-badge { display: inline-block; padding: 4px 10px; border-radius: 15px; font-weight: bold; font-size: 0.85em; }
+        .win-win { background: #28a745; color: white; }
+        .win-loss { background: #dc3545; color: white; }
+        .win-draw { background: #6c757d; color: white; }
+        .win-pending { background: #ffc107; color: #000; }
+        .win-na { background: #e9ecef; color: #6c757d; }
+        .streak-badge { font-weight: bold; padding: 2px 8px; border-radius: 10px; font-size: 0.85em; }
+        .streak-win { background: rgba(40, 167, 69, 0.2); color: #28a745; }
+        .streak-loss { background: rgba(220, 53, 69, 0.2); color: #dc3545; }
+        .zone-enter { background: rgba(220, 53, 69, 0.2); padding: 5px 10px; border-radius: 5px; font-weight: bold; color: #dc3545; font-size: 0.85em; }
+        .zone-inside { background: rgba(253, 126, 20, 0.2); padding: 5px 10px; border-radius: 5px; font-weight: bold; color: #fd7e14; font-size: 0.85em; }
+        .zone-exit { background: rgba(40, 167, 69, 0.2); padding: 5px 10px; border-radius: 5px; font-weight: bold; color: #28a745; font-size: 0.85em; }
+        .legend { padding: 20px 30px; background: #f8f9fa; display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; font-size: 0.9em; }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .legend-icon { font-size: 1.3em; }
+        .footer { padding: 20px; text-align: center; background: #f8f9fa; color: #666; font-size: 0.9em; }
+        @media (max-width: 768px) { .summary { grid-template-columns: 1fr; } table { font-size: 0.75em; } th, td { padding: 6px 4px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Choppy Market Trading Report</h1>
+            <p>รายงานการเทรดและการตรวจจับภาวะตลาด Choppy พร้อม Action & Win/Loss Analysis</p>
+        </div>
+        
+        <div class="trading-stats">
+            <h2>📈 สถิติการเทรด</h2>
+            <div class="stats-grid">
+                <div class="stat-box"><div class="stat-value">0</div><div class="stat-label">จำนวนเทรดทั้งหมด</div></div>
+                <div class="stat-box"><div class="stat-value">0</div><div class="stat-label">✅ ชนะ</div></div>
+                <div class="stat-box"><div class="stat-value">0</div><div class="stat-label">❌ แพ้</div></div>
+                <div class="stat-box"><div class="stat-value">0%</div><div class="stat-label">🎯 Win Rate</div></div>
+                <div class="stat-box"><div class="stat-value">0</div><div class="stat-label">🔥 Max Win Streak</div></div>
+                <div class="stat-box"><div class="stat-value">0</div><div class="stat-label">❄️ Max Loss Streak</div></div>
+                <div class="stat-box"><div class="stat-value">6</div><div class="stat-label">⏸️ Idle</div></div>
+            </div>
+        </div>
+        
+        <div class="summary">
+            <div class="summary-card"><h3>แท่งทั้งหมด</h3><div class="value">9</div><div class="label">แท่งเทียน</div></div>
+            <div class="summary-card"><h3>สถานะปัจจุบัน</h3><div class="value danger">70</div><div class="label">คะแนน / 100</div></div>
+            <div class="summary-card"><h3>Range</h3><div class="value">2461</div><div class="label">pips</div></div>
+            <div class="summary-card"><h3>การสลับสี</h3><div class="value">100%</div><div class="label">8 ครั้ง</div></div>
+        </div>
+        
+        <div class="current-status">
+            <h2>🟠 สถานะปัจจุบัน</h2>
+            <div class="status-badge">High Risk - มีสัญญาณ Choppy</div>
+            <div class="status-badge">⚠️ ระวัง! มีสัญญาณเข้า Choppy - ลด Position</div>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th><th>เวลา</th><th>OHLC</th><th>สี</th><th>คะแนน</th><th>สถานะ</th><th>Action</th><th>สีถัดไป</th><th>Win/Loss</th><th>Win Streak</th><th>Loss Streak</th><th>Choppy Zone</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr class="row-neutral">
+                        <td><strong>1</strong></td>
+                        <td style="font-size: 0.8em;">18:32:00</td>
+                        <td style="font-size: 0.8em;">O:2867.15<br>H:2867.35<br>L:2866.14<br>C:2866.35</td>
+                        <td class="color-red">Red</td>
+                        <td><span class="score-badge score-safe">0</span></td>
+                        <td style="font-size: 0.85em;">⚪ N/A</td>
+                        <td><span class="action-badge action-idle">Idle</span></td>
+                        <td class="color-green">Green</td>
+                        <td><span class="win-badge win--">- -</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                    
+                    <tr class="row-neutral">
+                        <td><strong>2</strong></td>
+                        <td style="font-size: 0.8em;">18:33:00</td>
+                        <td style="font-size: 0.8em;">O:2866.08<br>H:2866.77<br>L:2865.84<br>C:2866.77</td>
+                        <td class="color-green">Green</td>
+                        <td><span class="score-badge score-safe">0</span></td>
+                        <td style="font-size: 0.85em;">⚪ N/A</td>
+                        <td><span class="action-badge action-idle">Idle</span></td>
+                        <td class="color-red">Red</td>
+                        <td><span class="win-badge win--">- -</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                    
+                    <tr class="row-danger">
+                        <td><strong>3</strong></td>
+                        <td style="font-size: 0.8em;">18:34:00</td>
+                        <td style="font-size: 0.8em;">O:2866.93<br>H:2866.93<br>L:2865.69<br>C:2865.69</td>
+                        <td class="color-red">Red</td>
+                        <td><span class="score-badge score-danger">70</span></td>
+                        <td style="font-size: 0.85em;">🟠 อันตราย</td>
+                        <td><span class="action-badge action-idle">Idle</span></td>
+                        <td class="color-green">Green</td>
+                        <td><span class="win-badge win-n/a">⚪ N/A</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><span class="zone-enter">🚨 เข้าสู่ Choppy Zone!</span></td>
+                    </tr>
+                    
+                    <tr class="row-danger">
+                        <td><strong>4</strong></td>
+                        <td style="font-size: 0.8em;">18:35:00</td>
+                        <td style="font-size: 0.8em;">O:2865.67<br>H:2866.40<br>L:2865.67<br>C:2866.16</td>
+                        <td class="color-green">Green</td>
+                        <td><span class="score-badge score-danger">70</span></td>
+                        <td style="font-size: 0.85em;">🟠 อันตราย</td>
+                        <td><span class="action-badge action-idle">Idle</span></td>
+                        <td class="color-red">Red</td>
+                        <td><span class="win-badge win-n/a">⚪ N/A</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><span class="zone-inside">⚠️ อยู่ใน Choppy (2 แท่ง)</span></td>
+                    </tr>
+                    
+                    <tr class="row-danger">
+                        <td><strong>5</strong></td>
+                        <td style="font-size: 0.8em;">18:36:00</td>
+                        <td style="font-size: 0.8em;">O:2866.20<br>H:2866.20<br>L:2865.16<br>C:2865.90</td>
+                        <td class="color-red">Red</td>
+                        <td><span class="score-badge score-danger">70</span></td>
+                        <td style="font-size: 0.85em;">🟠 อันตราย</td>
+                        <td><span class="action-badge action-idle">Idle</span></td>
+                        <td class="color-green">Green</td>
+                        <td><span class="win-badge win-n/a">⚪ N/A</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><span class="zone-inside">⚠️ อยู่ใน Choppy (3 แท่ง)</span></td>
+                    </tr>
+                    
+                    <tr class="row-critical">
+                        <td><strong>6</strong></td>
+                        <td style="font-size: 0.8em;">18:37:00</td>
+                        <td style="font-size: 0.8em;">O:2866.04<br>H:2866.97<br>L:2865.63<br>C:2866.28</td>
+                        <td class="color-green">Green</td>
+                        <td><span class="score-badge score-critical">95</span></td>
+                        <td style="font-size: 0.85em;">🔴 อันตรายมาก</td>
+                        <td><span class="action-badge action-idle">Idle</span></td>
+                        <td class="color-red">Red</td>
+                        <td><span class="win-badge win-n/a">⚪ N/A</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><span class="zone-inside">⚠️ อยู่ใน Choppy (4 แท่ง)</span></td>
+                    </tr>
+                    
+                    <tr class="row-critical">
+                        <td><strong>7</strong></td>
+                        <td style="font-size: 0.8em;">18:38:00</td>
+                        <td style="font-size: 0.8em;">O:2866.21<br>H:2866.45<br>L:2865.17<br>C:2866.20</td>
+                        <td class="color-red">Red</td>
+                        <td><span class="score-badge score-critical">95</span></td>
+                        <td style="font-size: 0.85em;">🔴 อันตรายมาก</td>
+                        <td><span class="action-badge action-idle">Idle</span></td>
+                        <td class="color-green">Green</td>
+                        <td><span class="win-badge win-n/a">⚪ N/A</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><span class="zone-inside">⚠️ อยู่ใน Choppy (5 แท่ง)</span></td>
+                    </tr>
+                    
+                    <tr class="row-critical">
+                        <td><strong>8</strong></td>
+                        <td style="font-size: 0.8em;">18:39:00</td>
+                        <td style="font-size: 0.8em;">O:2865.97<br>H:2867.04<br>L:2865.74<br>C:2866.96</td>
+                        <td class="color-green">Green</td>
+                        <td><span class="score-badge score-critical">95</span></td>
+                        <td style="font-size: 0.85em;">🔴 อันตรายมาก</td>
+                        <td><span class="action-badge action-idle">Idle</span></td>
+                        <td class="color-red">Red</td>
+                        <td><span class="win-badge win-n/a">⚪ N/A</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><span class="zone-inside">⚠️ อยู่ใน Choppy (6 แท่ง)</span></td>
+                    </tr>
+                    
+                    <tr class="row-danger">
+                        <td><strong>9</strong></td>
+                        <td style="font-size: 0.8em;">18:40:00</td>
+                        <td style="font-size: 0.8em;">O:2866.95<br>H:2866.95<br>L:2864.89<br>C:2864.89</td>
+                        <td class="color-red">Red</td>
+                        <td><span class="score-badge score-danger">70</span></td>
+                        <td style="font-size: 0.85em;">🟠 อันตราย</td>
+                        <td><span class="action-badge action-idle">Idle</span></td>
+                        <td class="color-?">?</td>
+                        <td><span class="win-badge win-pending">⏳ Pending</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td><span class="zone-inside">⚠️ อยู่ใน Choppy (7 แท่ง)</span></td>
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item"><span class="legend-icon">✅</span><span>Win</span></div>
+            <div class="legend-item"><span class="legend-icon">❌</span><span>Loss</span></div>
+            <div class="legend-item"><span class="legend-icon">🔥</span><span>Win Streak</span></div>
+            <div class="legend-item"><span class="legend-icon">❄️</span><span>Loss Streak</span></div>
+            <div class="legend-item"><span class="legend-icon">🚨</span><span>เข้า Choppy</span></div>
+            <div class="legend-item"><span class="legend-icon">✅</span><span>ออกจาก Choppy</span></div>
+            <div class="legend-item"><span class="action-badge action-buy" style="font-size: 0.85em;">Buy</span><span>ซื้อ</span></div>
+            <div class="legend-item"><span class="action-badge action-sell" style="font-size: 0.85em;">Sell</span><span>ขาย</span></div>
+            <div class="legend-item"><span class="action-badge action-idle" style="font-size: 0.85em;">Idle</span><span>ไม่เทรด</span></div>
+        </div>
+        
+        <div class="footer">
+            <p>📊 รายงานสร้างเมื่อ: 13/10/2568 12:58:26</p>
+            <p>⚠️ คำเตือน: ข้อมูลนี้ใช้สำหรับการวิเคราะห์เท่านั้น ไม่ใช่คำแนะนำในการลงทุน</p>
+            <p>📈 Max Win Streak: 0 | Max Loss Streak: 0 | Win Rate: 0%</p>
+        </div>
+    </div>
+</body>
+</html>
+  

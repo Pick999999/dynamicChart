@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deriv Full Analysis - Claude + DeepSeek + ChatGPT</title>
+    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        select, button, input[type="datetime-local"] {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        select, input[type="datetime-local"] {
+            background: white;
+            color: #333;
+        }
+
+        input[type="datetime-local"] {
+            border: 1px solid #ddd;
+            width: 200px;
+        }
+
+        button {
+            background: #ff6b6b;
+            color: white;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dc3545;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #28a745;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .info {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #666;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            display: flex;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-weight: bold;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            margin-bottom: -3px;
+        }
+
+        .tab:hover:not(.active) {
+            background: #e9ecef;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Chart Tab */
+        #chart {
+            width: 100%;
+            height: 600px;
+        }
+
+        /* Analysis Tab */
+        .analysis-container {
+            max-width: 100%;
+        }
+
+        /* AI Consensus Toggle */
+        .consensus-toggle {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .consensus-toggle button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0;
+            transition: all 0.3s;
+        }
+
+        .consensus-toggle button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .ai-predictions-panel {
+            display: none;
+            padding: 20px;
+            background: white;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .ai-predictions-panel.show {
+            display: block;
+        }
+
+        .ai-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .ai-card.claude {
+            border-left-color: #ff6b6b;
+        }
+
+        .ai-card.deepseek {
+            border-left-color: #4ecdc4;
+        }
+
+        .ai-card.chatgpt {
+            border-left-color: #10a37f;
+        }
+
+        .ai-card h3 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+        }
+
+        .ai-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .ai-badge.claude {
+            background: #ff6b6b;
+        }
+
+        .ai-badge.deepseek {
+            background: #4ecdc4;
+        }
+
+        .ai-badge.chatgpt {
+            background: #10a37f;
+        }
+
+        .prediction {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .prediction-label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .prediction-value {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .prediction-value.green {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .prediction-value.red {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .confidence {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .confidence-item {
+            flex: 1;
+        }
+
+        .confidence-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .confidence-bar {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .confidence-fill.green {
+            background: #28a745;
+        }
+
+        .confidence-fill.red {
+            background: #dc3545;
+        }
+
+        .confidence-text {
+            font-size: 11px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .consensus {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .consensus-detail {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .loading-analysis {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .loading-analysis.show {
+            display: block;
+        }
+
+        .spinner-small {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        .error {
+            display: none;
+            padding: 15px;
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+            margin: 20px;
+            border-radius: 5px;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px 50px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            #chart {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Deriv Full Analysis - AI Predictions</h1>
+            <h3>D:\Rust\phpAllPredictAPI\deriv-full-analysis.html</h3>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Symbol</label>
+                    <select id="symbolSelect">
+                        <option value="R_10">Volatility 10 Index</option>
+                        <option value="R_25">Volatility 25 Index</option>
+                        <option value="R_50">Volatility 50 Index</option>
+                        <option value="R_75">Volatility 75 Index</option>
+                        <option value="R_100">Volatility 100 Index</option>
+                        <option value="frxEURUSD">EUR/USD</option>
+                        <option value="frxGBPUSD">GBP/USD</option>
+                        <option value="frxUSDJPY">USD/JPY</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Timeframe</label>
+                    <select id="granularitySelect">
+                        <option value="60">1 Minute</option>
+                        <option value="300">5 Minutes</option>
+                        <option value="900">15 Minutes</option>
+                        <option value="1800">30 Minutes</option>
+                        <option value="3600">1 Hour</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Mode</label>
+                    <select id="modeSelect">
+                        <option value="count">By Count</option>
+                        <option value="date" selected>By Date Range</option>
+                    </select>
+                </div>
+                <div class="control-group" id="countGroup" style="display: none;">
+                    <label>Count</label>
+                    <select id="countSelect">
+                        <option value="50">50 Candles</option>
+                        <option value="100">100 Candles</option>
+                        <option value="200" selected>200 Candles</option>
+                        <option value="500">500 Candles</option>
+                        <option value="1000">1000 Candles</option>
+                    </select>
+                </div>
+                <div class="control-group" id="startDateGroup">
+                    <label>Start Date</label>
+                    <input type="datetime-local" id="startDate" />
+                </div>
+                <div class="control-group" id="endDateGroup">
+                    <label>End Date</label>
+                    <input type="datetime-local" id="endDate" readonly style="opacity: 0.7; cursor: not-allowed;" />
+                </div>
+                <button id="loadBtn">🔄 Load & Analyze</button>
+            </div>
+        </div>
+
+        <div class="status">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Disconnected</span>
+            </div>
+            <div class="info">
+                <div class="info-item">
+                    <span class="info-label">Symbol:</span>
+                    <span id="currentSymbol">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Timeframe:</span>
+                    <span id="currentTimeframe">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Candles:</span>
+                    <span id="candleCount">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="error" id="errorMsg"></div>
+
+        <div class="main-content">
+            <div id="chart"></div>
+            
+            <div class="analysis-panel">
+                <div class="summary-card">
+                    <h3>🎯 AI Consensus</h3>
+                    <div class="consensus" id="consensus">-</div>
+                    <div class="consensus-detail" id="consensusDetail">Waiting for analysis...</div>
+                </div>
+
+                <div class="loading-analysis" id="loadingAnalysis">
+                    <div class="spinner-small"></div>
+                    <div>Analyzing with AI models...</div>
+                </div>
+
+                <div class="ai-card claude">
+                    <h3>
+                        <span class="ai-badge claude">Claude</span>
+                        Anthropic AI
+                    </h3>
+                    <div class="prediction">
+                        <span class="prediction-label">Prediction:</span>
+                        <span class="prediction-value" id="claudePrediction">-</span>
+                    </div>
+                    <div class="confidence">
+                        <div class="confidence-item">
+                            <div class="confidence-label">🟢 Green</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill green" id="claudeGreen" style="width: 0%"></div>
+                            </div>
+                            <div class="confidence-text" id="claudeGreenText">0%</div>
+                        </div>
+                        <div class="confidence-item">
+                            <div class="confidence-label">🔴 Red</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill red" id="claudeRed" style="width: 0%"></div>
+                            </div>
+                            <div class="confidence-text" id="claudeRedText">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai-card deepseek">
+                    <h3>
+                        <span class="ai-badge deepseek">DeepSeek</span>
+                        Deep Learning AI
+                    </h3>
+                    <div class="prediction">
+                        <span class="prediction-label">Prediction:</span>
+                        <span class="prediction-value" id="deepseekPrediction">-</span>
+                    </div>
+                    <div class="confidence">
+                        <div class="confidence-item">
+                            <div class="confidence-label">🟢 Green</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill green" id="deepseekGreen" style="width: 0%"></div>
+                            </div>
+                            <div class="confidence-text" id="deepseekGreenText">0%</div>
+                        </div>
+                        <div class="confidence-item">
+                            <div class="confidence-label">🔴 Red</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill red" id="deepseekRed" style="width: 0%"></div>
+                            </div>
+                            <div class="confidence-text" id="deepseekRedText">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ai-card chatgpt">
+                    <h3>
+                        <span class="ai-badge chatgpt">ChatGPT</span>
+                        OpenAI GPT-4
+                    </h3>
+                    <div class="prediction">
+                        <span class="prediction-label">Prediction:</span>
+                        <span class="prediction-value" id="chatgptPrediction">-</span>
+                    </div>
+                    <div class="confidence">
+                        <div class="confidence-item">
+                            <div class="confidence-label">🟢 Green</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill green" id="chatgptGreen" style="width: 0%"></div>
+                            </div>
+                            <div class="confidence-text" id="chatgptGreenText">0%</div>
+                        </div>
+                        <div class="confidence-item">
+                            <div class="confidence-label">🔴 Red</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill red" id="chatgptRed" style="width: 0%"></div>
+                            </div>
+                            <div class="confidence-text" id="chatgptRedText">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🤖 Powered by <strong>Claude + DeepSeek + ChatGPT</strong> | 📊 <strong>Deriv API + Lightweight Charts</strong></p>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div>Loading data from Deriv...</div>
+    </div>
+
+    <script>
+        // Global variables
+        let chart = null;
+        let candlestickSeries = null;
+        let ws = null;
+        let currentCandleData = null;
+
+        // Initialize chart
+        function initChart() {
+            const chartContainer = document.getElementById('chart');
+            
+            chart = LightweightCharts.createChart(chartContainer, {
+                width: chartContainer.clientWidth,
+                height: 600,
+                layout: {
+                    background: { color: '#ffffff' },
+                    textColor: '#333',
+                },
+                grid: {
+                    vertLines: { color: '#e1e3e6' },
+                    horzLines: { color: '#e1e3e6' },
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                },
+                rightPriceScale: {
+                    borderColor: '#cccccc',
+                },
+                timeScale: {
+                    borderColor: '#cccccc',
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+            });
+
+            candlestickSeries = chart.addCandlestickSeries({
+                upColor: '#26a69a',
+                downColor: '#ef5350',
+                borderVisible: false,
+                wickUpColor: '#26a69a',
+                wickDownColor: '#ef5350',
+            });
+
+            window.addEventListener('resize', () => {
+                chart.applyOptions({ 
+                    width: chartContainer.clientWidth 
+                });
+            });
+        }
+
+        // Connect to Deriv WebSocket API
+        function connectWebSocket() {
+            return new Promise((resolve, reject) => {
+                ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
+                
+                ws.onopen = () => {
+                    console.log('WebSocket Connected');
+                    updateStatus(true, 'Connected to Deriv API');
+                    resolve();
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket Error:', error);
+                    updateStatus(false, 'Connection Error');
+                    reject(error);
+                };
+
+                ws.onclose = () => {
+                    console.log('WebSocket Disconnected');
+                    updateStatus(false, 'Disconnected');
+                };
+
+                ws.onmessage = (msg) => {
+                    const data = JSON.parse(msg.data);
+                    handleWebSocketMessage(data);
+                };
+            });
+        }
+
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            if (data.error) {
+                showError(data.error.message);
+                hideLoading();
+                return;
+            }
+
+            if (data.msg_type === 'candles') {
+                displayCandles(data.candles);
+            }
+        }
+
+        // Load historical candles
+        async function loadCandles() {
+            const symbol = document.getElementById('symbolSelect').value;
+            const granularity = document.getElementById('granularitySelect').value;
+            const mode = document.getElementById('modeSelect').value;
+
+            showLoading();
+            hideError();
+
+            try {
+                if (!ws || ws.readyState !== WebSocket.OPEN) {
+                    await connectWebSocket();
+                }
+
+                let request;
+
+                if (mode === 'date') {
+                    const startDateInput = document.getElementById('startDate').value;
+                    const endDateInput = document.getElementById('endDate').value;
+
+                    if (!startDateInput || !endDateInput) {
+                        showError('Please select both Start Date and End Date');
+                        hideLoading();
+                        return;
+                    }
+
+                    const startTimestamp = Math.floor(new Date(startDateInput).getTime() / 1000);
+                    const endTimestamp = Math.floor(new Date(endDateInput).getTime() / 1000);
+
+                    if (startTimestamp >= endTimestamp) {
+                        showError('Start Date must be before End Date');
+                        hideLoading();
+                        return;
+                    }
+
+                    request = {
+                        ticks_history: symbol,
+                        adjust_start_time: 1,
+                        start: startTimestamp,
+                        end: endTimestamp,
+                        style: 'candles',
+                        granularity: parseInt(granularity)
+                    };
+                } else {
+                    const count = document.getElementById('countSelect').value;
+                    const end = Math.floor(Date.now() / 1000);
+
+                    request = {
+                        ticks_history: symbol,
+                        adjust_start_time: 1,
+                        count: parseInt(count),
+                        end: end,
+                        start: 1,
+                        style: 'candles',
+                        granularity: parseInt(granularity)
+                    };
+                }
+
+                ws.send(JSON.stringify(request));
+
+                document.getElementById('currentSymbol').textContent = 
+                    document.getElementById('symbolSelect').selectedOptions[0].text;
+                document.getElementById('currentTimeframe').textContent = 
+                    document.getElementById('granularitySelect').selectedOptions[0].text;
+
+            } catch (error) {
+                console.error('Error loading candles:', error);
+                showError('Failed to load data: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Display candles on chart
+        function displayCandles(candles) {
+            if (!candles || candles.length === 0) {
+                showError('No candle data received');
+                hideLoading();
+                return;
+            }
+
+            const candleData = candles.map(candle => ({
+                time: candle.epoch,
+                open: parseFloat(candle.open),
+                high: parseFloat(candle.high),
+                low: parseFloat(candle.low),
+                close: parseFloat(candle.close),
+            }));
+
+            candlestickSeries.setData(candleData);
+            currentCandleData = candleData;
+            
+            document.getElementById('candleCount').textContent = candles.length;
+
+            hideLoading();
+            chart.timeScale().fitContent();
+
+            // Start AI analysis
+            analyzeWithAI(candleData);
+        }
+
+        // Analyze with AI models (PHP backend)
+        async function analyzeWithAI(candleData) {
+            document.getElementById('loadingAnalysis').classList.add('show');
+
+            try {
+                // Get selected asset code
+                const assetSelect = document.getElementById('assetSelect');
+                const assetCode = assetSelect ? assetSelect.value : 'R_10';
+
+                console.log('Sending candle data to analysis...', {
+                    totalCandles: candleData.length,
+                    assetCode: assetCode
+                });
+
+                // Send candle data to PHP backend for analysis
+                const response = await fetch('api-receive-candle-v2.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        candles: candleData,
+                        assetCode: assetCode
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to analyze data: ' + response.statusText);
+                }
+
+                const result = await response.json();
+                
+                console.log('Analysis result:', result);
+
+                if (result.success) {
+                    displayAnalysis(result.data);
+                    showSuccess('Analysis completed! ' + result.stats.totalTrades + ' trades analyzed.');
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showError('Failed to analyze: ' + error.message);
+            } finally {
+                document.getElementById('loadingAnalysis').classList.remove('show');
+            }
+        }
+
+        // Display AI analysis results
+        function displayAnalysis(analysis) {
+            // ตรวจสอบว่ามีข้อมูล labStJson หรือไม่
+            if (analysis && analysis.labStJson && analysis.labStJson.length > 0) {
+                const trades = analysis.labStJson;
+                const lastTrade = trades[trades.length - 1];
+                
+                // แสดงผลจาก Trade ตัวสุดท้าย
+                updateAIPrediction('claude', {
+                    prediction: lastTrade.Claude.SuggestColor,
+                    green: lastTrade.Claude.SuggestColor === 'Green' ? 65 : 35,
+                    red: lastTrade.Claude.SuggestColor === 'Red' ? 65 : 35
+                });
+                
+                updateAIPrediction('chatgpt', {
+                    prediction: lastTrade.ChatGPT.SuggestColor,
+                    green: lastTrade.ChatGPT.SuggestColor === 'Green' ? 65 : 35,
+                    red: lastTrade.ChatGPT.SuggestColor === 'Red' ? 65 : 35
+                });
+                
+                updateAIPrediction('deepseek', {
+                    prediction: lastTrade.DeepSeek.SuggestColor,
+                    green: lastTrade.DeepSeek.SuggestColor === 'Green' ? 65 : 35,
+                    red: lastTrade.DeepSeek.SuggestColor === 'Red' ? 65 : 35
+                });
+
+                // Update Consensus
+                updateConsensus({
+                    claude: { prediction: lastTrade.Claude.SuggestColor },
+                    chatgpt: { prediction: lastTrade.ChatGPT.SuggestColor },
+                    deepseek: { prediction: lastTrade.DeepSeek.SuggestColor }
+                });
+
+                // แสดงสถิติเพิ่มเติม
+                displayTradeStats(trades);
+                
+                // แสดงปุ่มไปดู Full Report
+                showFullReportButton();
+            } else {
+                // Fallback to old format (if exists)
+                if (analysis.claude) updateAIPrediction('claude', analysis.claude);
+                if (analysis.deepseek) updateAIPrediction('deepseek', analysis.deepseek);
+                if (analysis.chatgpt) updateAIPrediction('chatgpt', analysis.chatgpt);
+                updateConsensus(analysis);
+            }
+        }
+
+        // แสดงสถิติ Trade
+        function displayTradeStats(trades) {
+            const totalTrades = trades.length;
+            
+            // คำนวณ Win Rate
+            let claudeWins = 0, chatgptWins = 0, deepseekWins = 0;
+            let maxLossClaude = 0, maxLossChatGPT = 0, maxLossDeepSeek = 0;
+            
+            trades.forEach(trade => {
+                if (trade.Claude.WinStatus === '💲Win') claudeWins++;
+                if (trade.ChatGPT.WinStatus === '💲Win') chatgptWins++;
+                if (trade.DeepSeek.WinStatus === '💲Win') deepseekWins++;
+                
+                if (trade.Claude.LossCon > maxLossClaude) maxLossClaude = trade.Claude.LossCon;
+                if (trade.ChatGPT.LossCon > maxLossChatGPT) maxLossChatGPT = trade.ChatGPT.LossCon;
+                if (trade.DeepSeek.LossCon > maxLossDeepSeek) maxLossDeepSeek = trade.DeepSeek.LossCon;
+            });
+            
+            // แสดงผลในส่วน info
+            const infoContainer = document.querySelector('.info');
+            if (infoContainer) {
+                const statsHTML = `
+                    <div class="info-item">
+                        <span class="info-label">Total Trades:</span>
+                        <span>${totalTrades}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Claude Win Rate:</span>
+                        <span>${((claudeWins/totalTrades)*100).toFixed(1)}%</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Max Loss:</span>
+                        <span>C:${maxLossClaude} | G:${maxLossChatGPT} | D:${maxLossDeepSeek}</span>
+                    </div>
+                `;
+                
+                // เพิ่มข้อมูลต่อท้าย
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = statsHTML;
+                while (tempDiv.firstChild) {
+                    infoContainer.appendChild(tempDiv.firstChild);
+                }
+            }
+        }
+
+        // แสดงปุ่มไปดู Full Report
+        function showFullReportButton() {
+            const analysisPanel = document.querySelector('.analysis-panel');
+            if (!analysisPanel) return;
+            
+            // ตรวจสอบว่ามีปุ่มอยู่แล้วหรือไม่
+            if (document.getElementById('fullReportBtn')) return;
+            
+            const btnHTML = `
+                <div style="margin-top: 20px; text-align: center;">
+                    <a id="fullReportBtn" href="display.php" target="_blank" 
+                       style="display: inline-block; padding: 15px 30px; 
+                              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                              color: white; text-decoration: none; border-radius: 8px; 
+                              font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                              transition: all 0.3s ease;">
+                        📊 View Full Report & Details
+                    </a>
+                </div>
+            `;
+            
+            analysisPanel.insertAdjacentHTML('beforeend', btnHTML);
+            
+            // เพิ่ม hover effect
+            const btn = document.getElementById('fullReportBtn');
+            btn.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
+            });
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+            });
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const successEl = document.createElement('div');
+            successEl.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                font-weight: bold;
+            `;
+            successEl.textContent = '✅ ' + message;
+            document.body.appendChild(successEl);
+            
+            setTimeout(() => {
+                successEl.remove();
+            }, 5000);
+        }
+
+        // Update individual AI prediction
+        function updateAIPrediction(aiName, data) {
+            const predictionEl = document.getElementById(`${aiName}Prediction`);
+            const greenBar = document.getElementById(`${aiName}Green`);
+            const redBar = document.getElementById(`${aiName}Red`);
+            const greenText = document.getElementById(`${aiName}GreenText`);
+            const redText = document.getElementById(`${aiName}RedText`);
+
+            predictionEl.textContent = data.prediction;
+            predictionEl.className = `prediction-value ${data.prediction.toLowerCase()}`;
+
+            greenBar.style.width = data.green + '%';
+            redBar.style.width = data.red + '%';
+            greenText.textContent = data.green + '%';
+            redText.textContent = data.red + '%';
+        }
+
+        // Update consensus
+        function updateConsensus(analysis) {
+            const greenCount = [
+                analysis.claude.prediction === 'Green' ? 1 : 0,
+                analysis.deepseek.prediction === 'Green' ? 1 : 0,
+                analysis.chatgpt.prediction === 'Green' ? 1 : 0
+            ].reduce((a, b) => a + b, 0);
+
+            const consensusEl = document.getElementById('consensus');
+            const detailEl = document.getElementById('consensusDetail');
+
+            if (greenCount >= 2) {
+                consensusEl.textContent = '🟢 GREEN';
+                consensusEl.style.color = '#28a745';
+                detailEl.textContent = `${greenCount}/3 AI models agree`;
+            } else {
+                consensusEl.textContent = '🔴 RED';
+                consensusEl.style.color = '#dc3545';
+                detailEl.textContent = `${3-greenCount}/3 AI models agree`;
+            }
+        }
+
+        // Update connection status
+        function updateStatus(isConnected, message) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            
+            if (isConnected) {
+                dot.classList.add('connected');
+                text.textContent = message || 'Connected';
+            } else {
+                dot.classList.remove('connected');
+                text.textContent = message || 'Disconnected';
+            }
+        }
+
+        // Show/hide loading
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('loadBtn').disabled = true;
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('loadBtn').disabled = false;
+        }
+
+        // Show/hide error
+        function showError(message) {
+            const errorEl = document.getElementById('errorMsg');
+            errorEl.textContent = '⚠️ ' + message;
+            errorEl.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('errorMsg').classList.remove('show');
+        }
+
+        // Mode selector toggle
+        document.getElementById('modeSelect').addEventListener('change', function() {
+            const mode = this.value;
+            const countGroup = document.getElementById('countGroup');
+            const startDateGroup = document.getElementById('startDateGroup');
+            const endDateGroup = document.getElementById('endDateGroup');
+
+            if (mode === 'date') {
+                countGroup.style.display = 'none';
+                startDateGroup.style.display = 'flex';
+                endDateGroup.style.display = 'flex';
+                
+                // Set default to today with 00:05:00 - 23:55:00
+                const now = new Date();
+                setDateRangeForDay(now);
+            } else {
+                countGroup.style.display = 'flex';
+                startDateGroup.style.display = 'none';
+                endDateGroup.style.display = 'none';
+            }
+        });
+
+        // Function to set date range for same day (00:05:00 to 23:55:00)
+        function setDateRangeForDay(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            
+            // Start: 00:05:00
+            const startDateTime = `${year}-${month}-${day}T00:05`;
+            // End: 23:55:00
+            const endDateTime = `${year}-${month}-${day}T23:55`;
+            
+            document.getElementById('startDate').value = startDateTime;
+            document.getElementById('endDate').value = endDateTime;
+        }
+
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Event listeners
+        document.getElementById('loadBtn').addEventListener('click', loadCandles);
+        
+        // Listen to startDate changes - Auto update endDate to same day
+        document.getElementById('startDate').addEventListener('change', function() {
+            const startDateValue = this.value;
+            if (startDateValue) {
+                // Parse the selected date
+                const selectedDate = new Date(startDateValue);
+                setDateRangeForDay(selectedDate);
+                console.log('Start date changed to:', startDateValue);
+            }
+        });
+        
+        // Also listen to input event for immediate feedback
+        document.getElementById('startDate').addEventListener('input', function() {
+            const startDateValue = this.value;
+            if (startDateValue && startDateValue.length >= 10) { // มีวันที่ครบแล้ว
+                const selectedDate = new Date(startDateValue);
+                if (!isNaN(selectedDate.getTime())) {
+                    setDateRangeForDay(selectedDate);
+                }
+            }
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            initChart();
+            
+            // Set initial date range if mode is date
+            const mode = document.getElementById('modeSelect').value;
+            if (mode === 'date') {
+                const now = new Date();
+                setDateRangeForDay(now);
+            }
+            
+            setTimeout(() => {
+                loadCandles();
+            }, 500);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (ws) {
+                ws.close();
+            }
+        });
+    </script>
+</body>
+</html>

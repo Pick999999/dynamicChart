@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analysis Trade - วิเคราะห์การเทรด</title>
+  <style>
+    :root {
+      --bg-dark: #0a0e1a;
+      --bg-card: linear-gradient(135deg, rgba(16, 26, 68, 0.85) 0%, rgba(6, 11, 40, 0.9) 100%);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --text-primary: #ffffff;
+      --text-secondary: #cbd5e1;
+      --text-tertiary: #94a3b8;
+      --accent-blue: #0075ff;
+      --accent-cyan: #00d4ff;
+      --accent-green: #34d399;
+      --accent-red: #f87171;
+      --accent-orange: #fb923c;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+      --transition-fast: all 0.2s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 20px;
+      background-image: 
+        radial-gradient(circle at 20% 50%, rgba(0, 117, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 212, 255, 0.08) 0%, transparent 50%);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #0075ff 0%, #00d4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    /* Card */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-primary);
+    }
+
+    /* VPS Thumbnail Gallery */
+    .vps-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .vps-thumbnail {
+      background: rgba(15, 23, 42, 0.6);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .vps-thumbnail:hover {
+      border-color: var(--accent-blue);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 117, 255, 0.3);
+    }
+
+    .vps-thumbnail.selected {
+      border-color: var(--accent-cyan);
+      background: rgba(0, 212, 255, 0.1);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+    }
+
+    .vps-image {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .vps-image-placeholder {
+      width: 100%;
+      height: 120px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+    }
+
+    .vps-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .vps-code {
+      font-size: 12px;
+      color: var(--accent-cyan);
+      text-align: center;
+      font-weight: 600;
+    }
+
+    /* Control Panel */
+    .control-panel {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .control-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .form-input {
+      background: rgba(10, 19, 48, 0.85);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      transition: var(--transition-fast);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(0, 117, 255, 0.25);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition-fast);
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0075ff 0%, #00d4ff 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0, 117, 255, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 212, 255, 0.45);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: var(--text-primary);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+    }
+
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    /* Console Log */
+    .console {
+      background: #090d16;
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12px;
+      color: #e2e8f0;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 24px;
+    }
+
+    .console-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 10px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .log-entry {
+      margin: 4px 0;
+      line-height: 1.6;
+    }
+
+    .log-info { color: #38bdf8; }
+    .log-success { color: #34d399; font-weight: bold; }
+    .log-warn { color: #fbbf24; }
+    .log-error { color: #f87171; font-weight: bold; }
+
+    /* Table */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .data-table th {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-tertiary);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .data-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+    }
+
+    .data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text-primary);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-win {
+      background: rgba(52, 211, 153, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .badge-loss {
+      background: rgba(248, 113, 113, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    .badge-asset {
+      background: rgba(0, 117, 255, 0.15);
+      color: #00d4ff;
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      font-family: monospace;
+      font-weight: 700;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Alert Message */
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .alert-info {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .alert-warning {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .alert-error {
+      background: rgba(248, 113, 113, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>📊 Analysis Trade - วิเคราะห์การเทรด</h1>
+      <p>เลือก VPS Server และวันที่เพื่อดาวน์โหลดข้อมูล Trade History มาวิเคราะห์</p>
+    </div>
+
+    <!-- VPS Selection Card -->
+    <div class="card">
+      <div class="card-title">
+        🖥️ เลือก VPS Server
+      </div>
+      <div id="vpsGallery" class="vps-gallery">
+        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);">
+          <div class="spinner" style="margin: 0 auto 12px;"></div>
+          กำลังโหลดรายการ VPS...
+        </div>
+      </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="card">
+      <div class="card-title">
+        ⚙️ ตั้งค่าและดาวน์โหลดข้อมูล
+      </div>
+
+      <div id="alertNoSelection" class="alert alert-warning" style="display: none;">
+        ⚠️ กรุณาเลือก VPS Server ก่อนดาวน์โหลดข้อมูล
+      </div>
+
+      <div id="alertVpsInfo" class="alert alert-info" style="display: none;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div><strong>VPS ที่เลือก:</strong> <span id="infoVpsName"></span> (<span id="infoVpsCode"></span>)</div>
+          <div><strong>Target URL:</strong> <code id="infoTargetUrl" style="font-size: 11px; color: #00d4ff;"></code></div>
+          <div style="font-size: 11px; color: var(--text-tertiary);">
+            💡 ตรวจสอบว่า VPS มี API Endpoint: <code>/api/export_trade_data</code> และสามารถเข้าถึงได้
+          </div>
+        </div>
+      </div>
+
+      <div class="control-panel">
+        <div class="form-group">
+          <label class="form-label">📅 เลือกวันที่</label>
+          <input type="date" class="form-input" id="datePicker">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🔢 Server Code</label>
+          <input type="number" class="form-input" id="serverCode" value="2" min="1" placeholder="2">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">&nbsp;</label>
+          <button class="btn btn-primary" id="btnDownload">
+            <span>📥</span>
+            <span id="btnDownloadText">ดาวน์โหลดข้อมูล</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div>
+          <div class="stat-value" id="statTotalTrades">0</div>
+          <div class="stat-label">Total Trades</div>
+        </div>
+        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+          📊
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-value" id="statWinRate">0%</div>
+          <div class="stat-label">Win Rate</div>
+        </div>
+        <div class="stat-icon" style="background: linear-gradient(135deg, #0075ff, #00d4ff);">
+          🎯
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-value" id="statProfit" style="color: var(--accent-green);">$0.00</div>
+          <div class="stat-label">Total Profit</div>
+        </div>
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+          💰
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div>
+          <div class="stat-value" id="statAssets">0</div>
+          <div class="stat-label">Assets Traded</div>
+        </div>
+        <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #6366f1);">
+          🪙
+        </div>
+      </div>
+    </div>
+
+    <!-- Console Log -->
+    <div class="console">
+      <div class="console-header">
+        <span>💻 CONSOLE LOG</span>
+        <span style="cursor: pointer; color: #38bdf8;" onclick="clearConsole()">Clear</span>
+      </div>
+      <div id="consoleLog">
+        <div class="log-entry log-info">✨ ระบบพร้อมทำงาน - กรุณาเลือก VPS และวันที่ที่ต้องการดาวน์โหลดข้อมูล</div>
+      </div>
+    </div>
+
+    <!-- Trade Data Table -->
+    <div class="card">
+      <div class="card-title">
+        📋 รายการข้อมูล Trade History
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Contract ID</th>
+              <th>Purchase Time</th>
+              <th>Action</th>
+              <th>Strategy</th>
+              <th>Buy Price</th>
+              <th>Sell Price</th>
+              <th>Profit</th>
+              <th>Win/Loss Con</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tradeTableBody">
+            <tr>
+              <td colspan="10" style="text-align: center; padding: 40px; color: var(--text-tertiary);">
+                ยังไม่มีข้อมูล - กรุณาดาวน์โหลดข้อมูลจาก VPS
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load JSZip from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <script>
+    // Configuration
+    const API_VPS_URL = './php/api_vps.php';
+    const SAVE_TRADE_URL = './php/save_gcp_trades.php';
+
+    // Global variables
+    let vpsList = [];
+    let selectedVps = null;
+
+    // DOM elements
+    const vpsGallery = document.getElementById('vpsGallery');
+    const datePicker = document.getElementById('datePicker');
+    const serverCodeInput = document.getElementById('serverCode');
+    const btnDownload = document.getElementById('btnDownload');
+    const btnDownloadText = document.getElementById('btnDownloadText');
+    const alertNoSelection = document.getElementById('alertNoSelection');
+    const alertVpsInfo = document.getElementById('alertVpsInfo');
+    const infoVpsName = document.getElementById('infoVpsName');
+    const infoVpsCode = document.getElementById('infoVpsCode');
+    const infoTargetUrl = document.getElementById('infoTargetUrl');
+    const consoleLog = document.getElementById('consoleLog');
+    const tradeTableBody = document.getElementById('tradeTableBody');
+
+    // Stats elements
+    const statTotalTrades = document.getElementById('statTotalTrades');
+    const statWinRate = document.getElementById('statWinRate');
+    const statProfit = document.getElementById('statProfit');
+    const statAssets = document.getElementById('statAssets');
+
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    datePicker.value = today;
+
+    // Console functions
+    function appendLog(message, type = 'info') {
+      const time = new Date().toLocaleTimeString('th-TH');
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.innerHTML = `[${time}] ${message}`;
+      consoleLog.appendChild(entry);
+      consoleLog.scrollTop = consoleLog.scrollHeight;
+    }
+
+    function clearConsole() {
+      consoleLog.innerHTML = '<div class="log-entry log-info">✨ Console cleared</div>';
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Format date
+    function formatDateTime(timestamp) {
+      if (!timestamp) return '-';
+      const date = new Date(timestamp * 1000);
+      return date.toLocaleString('th-TH');
+    }
+
+    // Build VPS export URL
+    function getVpsExportUrl(vps, date) {
+      if (!vps) return '';
+      
+      let base = '';
+      if (vps.url && vps.url.trim()) {
+        base = vps.url.trim().replace(/\/+$/, '');
+      } else if (vps.publicIP && vps.publicIP.trim()) {
+        let ip = vps.publicIP.trim().replace(/\/+$/, '');
+        if (vps.portno && String(vps.portno).trim()) {
+          base = `${ip}:${String(vps.portno).trim()}`;
+        } else {
+          base = ip;
+        }
+      } else {
+        base = window.location.origin;
+      }
+
+      // Ensure protocol (http:// or https://) is always present
+      if (!/^https?:\/\//i.test(base)) {
+        if (base.includes('pkderiv.online') || base.includes('gpkderiv.shop') || base.endsWith('.shop') || base.endsWith('.online')) {
+          base = 'https://' + base;
+        } else {
+          base = 'http://' + base;
+        }
+      }
+
+      return `${base}/api/export_trade_data?startdatetime=${date}`;
+    }
+
+    // Load VPS List
+    async function loadVpsList() {
+      try {
+        appendLog('📡 กำลังโหลดรายการ VPS จากฐานข้อมูล...', 'info');
+        
+        const response = await fetch(API_VPS_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP Error ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          vpsList = data.data;
+          renderVpsGallery();
+          appendLog(`✅ โหลดรายการ VPS สำเร็จ (${vpsList.length} เครื่อง)`, 'success');
+        } else {
+          vpsGallery.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--accent-orange);">
+              ⚠️ ไม่พบข้อมูล VPS ในระบบ<br>
+              <small style="font-size: 12px; margin-top: 8px; display: block;">กรุณาเพิ่มข้อมูล VPS ในเมนู VPS Master ก่อน</small>
+            </div>
+          `;
+          appendLog('⚠️ ไม่พบข้อมูล VPS ในตาราง vpsMaster', 'warn');
+        }
+      } catch (error) {
+        vpsGallery.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--accent-red);">
+            ❌ เกิดข้อผิดพลาดในการโหลด VPS: ${escapeHtml(error.message)}
+          </div>
+        `;
+        appendLog(`❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    // Render VPS Gallery
+    function renderVpsGallery() {
+      if (vpsList.length === 0) {
+        vpsGallery.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-tertiary);">
+            ไม่มีข้อมูล VPS
+          </div>
+        `;
+        return;
+      }
+
+      vpsGallery.innerHTML = vpsList.map(vps => {
+        const hasImage = vps.image && vps.image.trim();
+        const imageHtml = hasImage 
+          ? `<img src="${escapeHtml(vps.image)}" alt="${escapeHtml(vps.vpsName)}" class="vps-image">`
+          : `<div class="vps-image-placeholder">🖥️</div>`;
+        
+        return `
+          <div class="vps-thumbnail" data-vps-id="${vps.id}" onclick="selectVps(${vps.id})">
+            ${imageHtml}
+            <div class="vps-name">${escapeHtml(vps.vpsName)}</div>
+            <div class="vps-code">${escapeHtml(vps.vpsCode)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Select VPS
+    function selectVps(vpsId) {
+      // Remove previous selection
+      document.querySelectorAll('.vps-thumbnail').forEach(el => {
+        el.classList.remove('selected');
+      });
+
+      // Add selection to clicked VPS
+      const thumbnailEl = document.querySelector(`[data-vps-id="${vpsId}"]`);
+      if (thumbnailEl) {
+        thumbnailEl.classList.add('selected');
+      }
+
+      // Update selected VPS
+      selectedVps = vpsList.find(v => v.id == vpsId);
+      
+      if (selectedVps) {
+        // Update server code if available
+        const sc = parseInt(selectedVps.vpsCode, 10);
+        if (!isNaN(sc) && sc > 0) {
+          serverCodeInput.value = sc;
+        }
+
+        alertNoSelection.style.display = 'none';
+        
+        // Show VPS info alert
+        alertVpsInfo.style.display = 'flex';
+        infoVpsName.textContent = selectedVps.vpsName;
+        infoVpsCode.textContent = selectedVps.vpsCode;
+        
+        const targetUrl = getVpsExportUrl(selectedVps, datePicker.value);
+        infoTargetUrl.textContent = targetUrl;
+        
+        appendLog(`✅ เลือก VPS: ${selectedVps.vpsName} (${selectedVps.vpsCode})`, 'success');
+        appendLog(`🌐 Target URL: ${targetUrl}`, 'info');
+        
+        // Show connection details
+        if (selectedVps.url) {
+          appendLog(`🔗 URL: ${selectedVps.url}`, 'info');
+        } else if (selectedVps.publicIP) {
+          appendLog(`🔗 IP: ${selectedVps.publicIP}${selectedVps.portno ? ':' + selectedVps.portno : ''}`, 'info');
+        }
+      }
+    }
+
+    // Download and process trade data
+    async function downloadTradeData() {
+      if (!selectedVps) {
+        alertNoSelection.style.display = 'flex';
+        appendLog('⚠️ กรุณาเลือก VPS Server ก่อน', 'warn');
+        return;
+      }
+
+      const date = datePicker.value;
+      if (!date) {
+        alert('กรุณาเลือกวันที่');
+        appendLog('⚠️ กรุณาเลือกวันที่', 'warn');
+        return;
+      }
+
+      const serverCode = parseInt(serverCodeInput.value, 10) || 2;
+      const exportUrl = getVpsExportUrl(selectedVps, date);
+
+      btnDownload.disabled = true;
+      btnDownloadText.textContent = 'กำลังดาวน์โหลด...';
+      appendLog(`🌐 กำลังส่ง Request ผ่าน PHP Backend: ${exportUrl}`, 'info');
+
+      try {
+        // ส่ง request ผ่าน PHP backend เพื่อ download ZIP (แก้ปัญหา CORS)
+        const response = await fetch(SAVE_TRADE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'download_and_save',
+            exportUrl: exportUrl,
+            serverCode: serverCode,
+            date: date,
+            vpsId: selectedVps.id,
+            vpsName: selectedVps.vpsName
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error ${response.status}: ${await response.text()}`);
+        }
+
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || 'เกิดข้อผิดพลาดในการดาวน์โหลด');
+        }
+
+        appendLog(`✅ ดาวน์โหลด ZIP สำเร็จ (${(result.zipSize / 1024).toFixed(2)} KB)`, 'success');
+        btnDownloadText.textContent = 'กำลังแตกไฟล์...';
+
+        // Decode base64 and unzip with JSZip
+        if (typeof JSZip === 'undefined') {
+          throw new Error('ไม่พบ JSZip Library - กรุณารีเฟรชหน้าใหม่');
+        }
+
+        const zipBase64 = result.zipBase64;
+        const zipBinary = atob(zipBase64);
+        const zipArray = new Uint8Array(zipBinary.length);
+        for (let i = 0; i < zipBinary.length; i++) {
+          zipArray[i] = zipBinary.charCodeAt(i);
+        }
+
+        appendLog('📂 กำลังแตกไฟล์ ZIP ด้วย JSZip...', 'info');
+        const zip = await JSZip.loadAsync(zipArray);
+        const zipFiles = Object.keys(zip.files);
+        appendLog(`📂 แตกไฟล์สำเร็จ! พบ ${zipFiles.length} ไฟล์`, 'success');
+
+        btnDownloadText.textContent = 'กำลังประมวลผล...';
+
+        // Parse JSON files
+        const tradeData = {};
+        let tradeHeadData = null;
+
+        for (const [filename, zipEntry] of Object.entries(zip.files)) {
+          if (zipEntry.dir) continue;
+
+          const content = await zipEntry.async('text');
+          let jsonData;
+          try {
+            jsonData = JSON.parse(content);
+          } catch (e) {
+            appendLog(`⚠️ ไม่สามารถ Parse JSON (${filename})`, 'warn');
+            continue;
+          }
+
+          const cleanPath = filename.replace(/^\.\//, '');
+          const pathParts = cleanPath.split('/');
+
+          if (pathParts.length === 1 && pathParts[0] === 'tradeHead.json') {
+            tradeHeadData = jsonData;
+            appendLog(`📄 โหลด tradeHead.json สำเร็จ (${Array.isArray(jsonData) ? jsonData.length + ' รอบ' : 'OK'})`, 'success');
+          } else if (pathParts.length === 2) {
+            const [assetCode, jsonFile] = pathParts;
+            if (!tradeData[assetCode]) {
+              tradeData[assetCode] = { assetCode, trades: null, trackOrders: null };
+            }
+            if (jsonFile === 'trades.json') {
+              tradeData[assetCode].trades = jsonData;
+              appendLog(`📄 [${assetCode}/trades.json] ${jsonData.length} records`, 'info');
+            } else if (jsonFile === 'track_orders.json') {
+              tradeData[assetCode].trackOrders = jsonData;
+            }
+          }
+        }
+
+        // Save to database
+        btnDownloadText.textContent = 'กำลังบันทึกลง Database...';
+        appendLog(`💾 กำลังบันทึกข้อมูลลง MySQL (serverCode=${serverCode})...`, 'info');
+
+        const itemsToSave = [];
+        let totalTradeCount = 0;
+        let totalProfitSum = 0;
+        let totalWins = 0;
+
+        for (const [sym, data] of Object.entries(tradeData)) {
+          if (data.trades && Array.isArray(data.trades) && data.trades.length > 0) {
+            itemsToSave.push({
+              symbol: sym,
+              serverCode: serverCode,
+              trades: data.trades
+            });
+
+            totalTradeCount += data.trades.length;
+
+            data.trades.forEach(t => {
+              const profit = parseFloat(t.ThisProfit || 0);
+              totalProfitSum += profit;
+              if (profit >= 0) totalWins++;
+            });
+          }
+        }
+
+        if (itemsToSave.length === 0) {
+          appendLog('⚠️ ไม่พบข้อมูล trades.json', 'warn');
+          tradeTableBody.innerHTML = `
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 20px; color: var(--accent-orange);">
+                ⚠️ ไม่พบข้อมูลการเทรด
+              </td>
+            </tr>
+          `;
+        } else {
+          // Save to database
+          const saveResponse = await fetch(SAVE_TRADE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              serverCode: serverCode,
+              items: itemsToSave
+            })
+          });
+
+          if (!saveResponse.ok) {
+            const errText = await saveResponse.text();
+            throw new Error(`Database Error: ${errText}`);
+          }
+
+          const saveResult = await saveResponse.json();
+          appendLog(`🎉 ${saveResult.message || 'บันทึกสำเร็จ!'}`, 'success');
+
+          // Save tradeHead if exists
+          if (tradeHeadData && Array.isArray(tradeHeadData) && tradeHeadData.length > 0) {
+            try {
+              const tradeHeadResponse = await fetch('./php/save_trade_rounds.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({serverCode: serverCode, tradeHead: tradeHeadData})
+              });
+              if (tradeHeadResponse.ok) {
+                const thResult = await tradeHeadResponse.json();
+                appendLog(`📋 บันทึก tradeHead สำเร็จ (${thResult.savedRounds || tradeHeadData.length} รอบ, ${thResult.savedAssets || 0} assets)`, 'success');
+              }
+            } catch (e) {
+              appendLog(`⚠️ บันทึก tradeHead ไม่สำเร็จ: ${e.message}`, 'warn');
+            }
+          }
+
+          // Update stats
+          const winRate = totalTradeCount > 0 ? ((totalWins / totalTradeCount) * 100).toFixed(1) : 0;
+          
+          statTotalTrades.textContent = totalTradeCount;
+          statWinRate.textContent = `${winRate}%`;
+          statProfit.textContent = (totalProfitSum >= 0 ? '+' : '') + '$' + totalProfitSum.toFixed(2);
+          statProfit.style.color = totalProfitSum >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+          statAssets.textContent = itemsToSave.length;
+
+          // Render table
+          renderTradeTable(tradeData);
+        }
+
+      } catch (error) {
+        appendLog(`❌ Error: ${error.message}`, 'error');
+        alert(`เกิดข้อผิดพลาด: ${error.message}`);
+      } finally {
+        btnDownload.disabled = false;
+        btnDownloadText.textContent = 'ดาวน์โหลดข้อมูล';
+      }
+    }
+
+    // Render Trade Table from array
+    function renderTradeTableFromArray(allTrades) {
+      if (!allTrades || allTrades.length === 0) {
+        tradeTableBody.innerHTML = `
+          <tr>
+            <td colspan="10" style="text-align: center; padding: 20px; color: var(--text-tertiary);">
+              ไม่มีข้อมูล
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Sort by purchase time (newest first)
+      allTrades.sort((a, b) => (b.purchaseTime || 0) - (a.purchaseTime || 0));
+
+      // Render only first 100 trades
+      const displayTrades = allTrades.slice(0, 100);
+
+      tradeTableBody.innerHTML = displayTrades.map(trade => {
+        const profit = parseFloat(trade.ThisProfit || trade.profit || 0);
+        const statusBadge = profit >= 0 
+          ? '<span class="badge badge-win">WIN</span>'
+          : '<span class="badge badge-loss">LOSS</span>';
+        
+        const winCon = trade.winCon || 0;
+        const lossCon = trade.lossCon || 0;
+        const conDisplay = profit >= 0 
+          ? `<span style="color: var(--accent-green); font-weight: 700;">W:${winCon}</span>`
+          : `<span style="color: var(--accent-red); font-weight: 700;">L:${lossCon}</span>`;
+
+        return `
+          <tr>
+            <td><span class="badge badge-asset">${escapeHtml(trade.symbol || '-')}</span></td>
+            <td>${escapeHtml(String(trade.contractId || trade.contract_id || '-'))}</td>
+            <td>${formatDateTime(trade.purchaseTime || trade.purchase_time)}</td>
+            <td><span style="font-weight: 700; color: ${trade.thisAction === 'CALL' ? '#00d4ff' : '#fb923c'};">${escapeHtml(trade.thisAction || '-')}</span></td>
+            <td><span style="font-size: 11px; color: var(--text-tertiary);">${escapeHtml(trade.codeStrategy || '-')}</span></td>
+            <td>$${parseFloat(trade.MoneyTrade || trade.buy_price || 0).toFixed(2)}</td>
+            <td>$${parseFloat(trade.sell_price || 0).toFixed(2)}</td>
+            <td style="color: ${profit >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight: 700;">
+              ${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}
+            </td>
+            <td>${conDisplay}</td>
+            <td>${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+
+      if (allTrades.length > 100) {
+        tradeTableBody.innerHTML += `
+          <tr>
+            <td colspan="10" style="text-align: center; padding: 12px; color: var(--text-tertiary); font-size: 12px;">
+              แสดง 100 รายการแรกจากทั้งหมด ${allTrades.length} รายการ
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Render Trade Table (legacy - for backward compatibility)
+    function renderTradeTable(tradeData) {
+      const allTrades = [];
+      
+      for (const [symbol, data] of Object.entries(tradeData)) {
+        if (data.trades && Array.isArray(data.trades)) {
+          data.trades.forEach(trade => {
+            allTrades.push({ ...trade, symbol });
+          });
+        }
+      }
+
+      if (allTrades.length === 0) {
+        tradeTableBody.innerHTML = `
+          <tr>
+            <td colspan="10" style="text-align: center; padding: 20px; color: var(--text-tertiary);">
+              ไม่มีข้อมูล
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Sort by purchase time (newest first)
+      allTrades.sort((a, b) => (b.purchaseTime || 0) - (a.purchaseTime || 0));
+
+      // Render only first 100 trades
+      const displayTrades = allTrades.slice(0, 100);
+
+      tradeTableBody.innerHTML = displayTrades.map(trade => {
+        const profit = parseFloat(trade.ThisProfit || trade.profit || 0);
+        const statusBadge = profit >= 0 
+          ? '<span class="badge badge-win">WIN</span>'
+          : '<span class="badge badge-loss">LOSS</span>';
+        
+        const winCon = trade.winCon || 0;
+        const lossCon = trade.lossCon || 0;
+        const conDisplay = profit >= 0 
+          ? `<span style="color: var(--accent-green); font-weight: 700;">W:${winCon}</span>`
+          : `<span style="color: var(--accent-red); font-weight: 700;">L:${lossCon}</span>`;
+
+        return `
+          <tr>
+            <td><span class="badge badge-asset">${escapeHtml(trade.symbol || '-')}</span></td>
+            <td>${escapeHtml(String(trade.contractId || trade.contract_id || '-'))}</td>
+            <td>${formatDateTime(trade.purchaseTime || trade.purchase_time)}</td>
+            <td><span style="font-weight: 700; color: ${trade.thisAction === 'CALL' ? '#00d4ff' : '#fb923c'};">${escapeHtml(trade.thisAction || '-')}</span></td>
+            <td><span style="font-size: 11px; color: var(--text-tertiary);">${escapeHtml(trade.codeStrategy || '-')}</span></td>
+            <td>$${parseFloat(trade.MoneyTrade || trade.buy_price || 0).toFixed(2)}</td>
+            <td>$${parseFloat(trade.sell_price || 0).toFixed(2)}</td>
+            <td style="color: ${profit >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}; font-weight: 700;">
+              ${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}
+            </td>
+            <td>${conDisplay}</td>
+            <td>${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+
+      if (allTrades.length > 100) {
+        tradeTableBody.innerHTML += `
+          <tr>
+            <td colspan="10" style="text-align: center; padding: 12px; color: var(--text-tertiary); font-size: 12px;">
+              แสดง 100 รายการแรกจากทั้งหมด ${allTrades.length} รายการ
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Event listeners
+    btnDownload.addEventListener('click', downloadTradeData);
+
+    // Update target URL when date changes
+    datePicker.addEventListener('change', () => {
+      if (selectedVps) {
+        const targetUrl = getVpsExportUrl(selectedVps, datePicker.value);
+        infoTargetUrl.textContent = targetUrl;
+        appendLog(`🌐 Target URL updated: ${targetUrl}`, 'info');
+      }
+    });
+
+    // Initialize
+    loadVpsList();
+  </script>
+</body>
+</html>
